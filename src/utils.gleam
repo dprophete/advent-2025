@@ -1,0 +1,36 @@
+import gleam/float
+import gleam/format.{printf}
+import gleam/time/duration
+import gleam/time/timestamp
+import simplifile
+
+pub fn pp_day(txt: String) {
+  printf("\n#### ~s\n", txt)
+}
+
+pub fn if_then_else(cond: Bool, if_true: a, if_false: a) -> a {
+  case cond {
+    True -> if_true
+    False -> if_false
+  }
+}
+
+pub fn fmt_duration(dur: duration.Duration) -> String {
+  let secs_float = duration.to_seconds(dur)
+  let with_2 = float.to_precision(secs_float, 2)
+  float.to_string(with_2) <> "ms"
+}
+
+pub fn run_it(fn_to_run: fn(String) -> a, file: String) -> a {
+  let assert Ok(content) = simplifile.read(file)
+  fn_to_run(content)
+}
+
+pub fn time_it(fn_to_run: fn(String) -> a, p: String, file: String) -> a {
+  let start = timestamp.system_time()
+  let res = run_it(fn_to_run, file)
+  let end = timestamp.system_time()
+  let dur = timestamp.difference(start, end)
+  printf("[~s] ~s : ~s -> ~p\n", #(fmt_duration(dur), p, file, res))
+  res
+}

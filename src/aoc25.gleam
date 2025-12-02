@@ -1,6 +1,7 @@
 import day01
+import day02
 
 pub fn main() {
-  echo "aoc25"
   day01.main()
+  day02.main()
 }

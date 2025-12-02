@@ -1,8 +1,7 @@
-import gleam/format.{printf}
 import gleam/int
 import gleam/list
 import gleam/string
-import simplifile
+import utils.{if_then_else, pp_day, time_it}
 
 type LR {
   L
@@ -28,8 +27,7 @@ fn parse_line(line: String) -> Line {
   Line(dir: dir, dist: dist)
 }
 
-pub fn p1(file: String) -> Int {
-  let assert Ok(content) = simplifile.read(file)
+pub fn p1(content) -> Int {
   let lines =
     content
     |> string.trim_end()
@@ -42,21 +40,16 @@ pub fn p1(file: String) -> Int {
     |> list.fold(start, fn(acc, line) {
       let #(dial, zeros) = acc
       let Line(dir:, dist:) = line
-      let new_dial = case dir {
-        L -> dial - dist
-        R -> dial + dist
-      }
+      let new_dial = if_then_else(dir == L, dial - dist, dial + dist)
       case new_dial % 100 {
         0 -> #(0, zeros + 1)
         n -> #(n, zeros)
       }
     })
-  printf("res for ~s: ~p\n", #(file, zeros))
   zeros
 }
 
-pub fn p2(file: String) -> Int {
-  let assert Ok(content) = simplifile.read(file)
+pub fn p2(content: String) -> Int {
   let lines =
     content
     |> string.trim_end()
@@ -82,13 +75,13 @@ pub fn p2(file: String) -> Int {
       }
       #({ dial + sign_dist + 100 } % 100, zeros + nb_full_rots + extra)
     })
-  printf("res for ~s: ~p\n", #(file, zeros))
   zeros
 }
 
 pub fn main() {
-  assert p1("data/01_sample.txt") == 3
-  assert p1("data/01_input.txt") == 1129
-  assert p2("data/01_sample.txt") == 6
-  assert p2("data/01_input.txt") == 6638
+  pp_day("Day 1: Secret Entrance")
+  assert time_it(p1, "p1", "data/01_sample.txt") == 3
+  assert time_it(p1, "p1", "data/01_input.txt") == 1129
+  assert time_it(p2, "p2", "data/01_sample.txt") == 6
+  assert time_it(p2, "p2", "data/01_input.txt") == 6638
 }

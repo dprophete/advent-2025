@@ -3,6 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/string
 import simplifile
+import utils.{pp_day}
 
 type LR {
   L
@@ -87,5 +88,5 @@ pub fn p2(file: String) -> Int {
 }
 
 pub fn main() {
-  echo "day2"
+  pp_day("Day 2: Gift Shop")
 }
