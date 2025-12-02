@@ -1,11 +1,17 @@
 import gleam/float
 import gleam/format.{printf}
+import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import simplifile
 
 pub fn pp_day(txt: String) {
   printf("\n#### ~s\n", txt)
+}
+
+// modulo but make sure the result is always positive
+pub fn pos_mod(nb: Int, mod: Int) -> Int {
+  { { nb % mod } + mod } % mod
 }
 
 pub fn if_then_else(cond: Bool, if_true: a, if_false: a) -> a {
@@ -23,7 +29,7 @@ pub fn fmt_duration(dur: duration.Duration) -> String {
 
 pub fn run_it(fn_to_run: fn(String) -> a, file: String) -> a {
   let assert Ok(content) = simplifile.read(file)
-  fn_to_run(content)
+  fn_to_run(content |> string.trim_end())
 }
 
 pub fn time_it(fn_to_run: fn(String) -> a, p: String, file: String) -> a {

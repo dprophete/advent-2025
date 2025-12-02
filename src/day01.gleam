@@ -27,12 +27,14 @@ fn parse_line(line: String) -> Line {
   Line(dir: dir, dist: dist)
 }
 
+fn parse_content(content: String) -> List(Line) {
+  content
+  |> string.split("\n")
+  |> list.map(parse_line)
+}
+
 pub fn p1(content) -> Int {
-  let lines =
-    content
-    |> string.trim_end()
-    |> string.split("\n")
-    |> list.map(parse_line)
+  let lines = parse_content(content)
 
   let start = #(50, 0)
   let #(_, zeros) =
@@ -40,8 +42,9 @@ pub fn p1(content) -> Int {
     |> list.fold(start, fn(acc, line) {
       let #(dial, zeros) = acc
       let Line(dir:, dist:) = line
-      let new_dial = if_then_else(dir == L, dial - dist, dial + dist)
-      case new_dial % 100 {
+      let new_dial =
+        if_then_else(dir == L, dial - dist, dial + dist) |> utils.pos_mod(100)
+      case new_dial {
         0 -> #(0, zeros + 1)
         n -> #(n, zeros)
       }
@@ -50,11 +53,7 @@ pub fn p1(content) -> Int {
 }
 
 pub fn p2(content: String) -> Int {
-  let lines =
-    content
-    |> string.trim_end()
-    |> string.split("\n")
-    |> list.map(parse_line)
+  let lines = parse_content(content)
 
   let start = #(50, 0)
   let #(_, zeros) =
@@ -73,7 +72,7 @@ pub fn p2(content: String) -> Int {
         _, n if n <= 0 -> 1
         _, _ -> 0
       }
-      #({ dial + sign_dist + 100 } % 100, zeros + nb_full_rots + extra)
+      #(utils.pos_mod(dial + sign_dist, 100), zeros + nb_full_rots + extra)
     })
   zeros
 }
