@@ -42,12 +42,10 @@ pub fn p1(content) -> Int {
     |> list.fold(start, fn(acc, line) {
       let #(dial, zeros) = acc
       let Line(dir:, dist:) = line
-      let new_dial =
-        if_then_else(dir == L, dial - dist, dial + dist) |> utils.pos_mod(100)
-      case new_dial {
-        0 -> #(0, zeros + 1)
-        n -> #(n, zeros)
-      }
+      let sign_dist = if_then_else(dir == L, -dist, dist)
+      let new_dial = { dial + sign_dist } |> utils.pos_mod(100)
+      let extra = if_then_else(new_dial == 0, 1, 0)
+      #(new_dial, zeros + extra)
     })
   zeros
 }
@@ -61,18 +59,16 @@ pub fn p2(content: String) -> Int {
     |> list.fold(start, fn(acc, line) {
       let #(dial, zeros) = acc
       let Line(dir:, dist:) = line
+      let sign_dist = if_then_else(dir == L, -dist, dist)
+      let new_dial = { dial + sign_dist } |> utils.pos_mod(100)
       let nb_full_rots = dist / 100
-      let sign_dist = case dir {
-        L -> -{ dist % 100 }
-        R -> dist % 100
-      }
-      let extra = case dial, dial + sign_dist {
+      let extra = case dial, dial + { sign_dist % 100 } {
         0, _ -> 0
         _, n if n >= 100 -> 1
         _, n if n <= 0 -> 1
         _, _ -> 0
       }
-      #(utils.pos_mod(dial + sign_dist, 100), zeros + nb_full_rots + extra)
+      #(new_dial, zeros + nb_full_rots + extra)
     })
   zeros
 }
