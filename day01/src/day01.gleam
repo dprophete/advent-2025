@@ -34,8 +34,8 @@ pub fn p1(file: String) {
   use content <- result.try(simplifile.read(file))
   let lines =
     content
+    |> string.trim_end()
     |> string.split("\n")
-    |> list.filter(fn(l) { l != "" })
     |> list.filter_map(parse_line)
 
   let start = #(50, 0)
