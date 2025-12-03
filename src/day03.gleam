@@ -18,6 +18,8 @@ fn parse_line(line: String) -> Bank {
   Bank(batteries: line |> string.split("") |> list.filter_map(int.parse))
 }
 
+// comparator to sort arrays of #(el:Int, idx:Int) by the first element
+// (basically you can use list.index_map first and then use this comparator)
 fn comp_with_idx(v1: #(Int, Int), v2: #(Int, Int)) {
   int.compare(v1.0, v2.0)
 }
