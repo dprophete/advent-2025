@@ -1,92 +1,54 @@
-import gleam/format.{printf}
 import gleam/int
 import gleam/list
+import gleam/option
+import gleam/result
 import gleam/string
-import simplifile
-import utils.{pp_day}
+import utils.{if_then_else, pp_day, time_it}
 
-type LR {
-  L
-  R
+type Range {
+  Range(low: Int, high: Int)
 }
 
-type Line {
-  Line(dir: LR, dist: Int)
+fn parse_line(line: String) -> List(Range) {
+  line
+  |> string.split(",")
+  |> list.map(fn(range_str) {
+    let assert [low, high] =
+      string.split(range_str, "-") |> list.filter_map(int.parse)
+    Range(low: low, high: high)
+  })
 }
 
-fn parse_line(line: String) -> Line {
-  let dir_char = string.slice(line, 0, 1)
-  let dist_str = string.slice(line, 1, string.length(line))
-
-  let dir = case dir_char {
-    "L" -> L
-    "R" -> R
-    _ -> panic as "Invalid direction"
+fn is_invalid(nb: Int) -> Bool {
+  let str = int.to_string(nb)
+  case string.length(str) {
+    n if n % 2 == 0 -> {
+      let fst = string.slice(str, 0, n / 2)
+      let lst = string.slice(str, n / 2, n)
+      fst == lst
+    }
+    _ -> False
   }
+}
 
-  let assert Ok(dist) = int.parse(dist_str)
-
-  Line(dir: dir, dist: dist)
+fn invalid_nbs(range: Range) -> Int {
+  // check all numbers in range and count invalid ones
+  list.range(range.low, range.high)
+  |> list.fold(0, fn(acc, nb) { if_then_else(is_invalid(nb), acc + nb, acc) })
 }
 
 pub fn p1(file: String) -> Int {
-  let assert Ok(content) = simplifile.read(file)
-  let lines =
-    content
-    |> string.trim_end()
-    |> string.split("\n")
-    |> list.map(parse_line)
-
-  let start = #(50, 0)
-  let #(_, zeros) =
-    lines
-    |> list.fold(start, fn(acc, line) {
-      let #(dial, zeros) = acc
-      let Line(dir:, dist:) = line
-      let new_dial = case dir {
-        L -> dial - dist
-        R -> dial + dist
-      }
-      case new_dial % 100 {
-        0 -> #(0, zeros + 1)
-        n -> #(n, zeros)
-      }
-    })
-  printf("res for ~s: ~p\n", #(file, zeros))
-  zeros
+  let ranges: List(Range) = parse_line(file)
+  ranges
+  |> list.fold(0, fn(acc, range) { acc + invalid_nbs(range) })
 }
 
-pub fn p2(file: String) -> Int {
-  let assert Ok(content) = simplifile.read(file)
-  let lines =
-    content
-    |> string.trim_end()
-    |> string.split("\n")
-    |> list.map(parse_line)
-
-  let start = #(50, 0)
-  let #(_, zeros) =
-    lines
-    |> list.fold(start, fn(acc, line) {
-      let #(dial, zeros) = acc
-      let Line(dir:, dist:) = line
-      let nb_full_rots = dist / 100
-      let sign_dist = case dir {
-        L -> -{ dist % 100 }
-        R -> dist % 100
-      }
-      let extra = case dial, dial + sign_dist {
-        0, _ -> 0
-        _, n if n >= 100 -> 1
-        _, n if n <= 0 -> 1
-        _, _ -> 0
-      }
-      #({ dial + sign_dist + 100 } % 100, zeros + nb_full_rots + extra)
-    })
-  printf("res for ~s: ~p\n", #(file, zeros))
-  zeros
+pub fn p2(_file: String) -> Int {
+  -1
 }
 
 pub fn main() {
   pp_day("Day 2: Gift Shop")
+  assert time_it(p1, "p1", "data/02_sample.txt") == 1_227_775_554
+  assert time_it(p1, "p1", "data/02_input.txt") == 35_367_539_282
 }
