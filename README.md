@@ -2,7 +2,7 @@
 
 https://adventofcode.com/2025
 
-Third year doing it. This year, there will only be 12 days. I am trying to do it all in [gleam](https://gleam.run/). Being a pure language (no side effect), it complicates things a little bit for some algorithms, but it's still a great learning exercise.
+Third year doing it. This year, there will only be 12 days. I am trying to do it all in [gleam](https://gleam.run/). Being a pure language (no side effects), and a young language (not that many utils libs), it complicates things a little bit for some algorithms, but it's still a great learning exercise.
 
 ## running
 
