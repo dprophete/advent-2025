@@ -24,7 +24,7 @@ pub fn if_then_else(cond: Bool, if_true: a, if_false: a) -> a {
 pub fn fmt_duration(dur: duration.Duration) -> String {
   let secs_float = duration.to_seconds(dur)
   let with_2 = float.to_precision(secs_float, 2)
-  float.to_string(with_2) <> "ms"
+  float.to_string(with_2) <> "s"
 }
 
 pub fn run_it(fn_to_run: fn(String) -> a, file: String) -> a {
