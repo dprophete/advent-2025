@@ -1,4 +1,3 @@
-import gleam/format.{printf}
 import gleam/int
 import gleam/list
 import gleam/string
