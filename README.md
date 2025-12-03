@@ -6,4 +6,4 @@ Third year doing it. This year, there will only be 12 days. I am trying to do it
 
 ## running
 
-Edit [src/aoc2025.gleam](./src/aoc2025.gleam) and change the day you want to run, then `gleam run` is your friend.
+Edit [src/aoc2025.gleam](./src/aoc25.gleam) and change the day you want to run, then `gleam run` is your friend.
