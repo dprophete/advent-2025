@@ -1,10 +1,15 @@
 import gleam/float
 import gleam/format.{printf}
 import gleam/int
+import gleam/list
 import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import simplifile
+
+pub fn list_sum(lst: List(Int)) -> Int {
+  list.fold(lst, 0, fn(acc, nb) { acc + nb })
+}
 
 pub fn nb_digits(nb: Int) -> Int {
   case nb {

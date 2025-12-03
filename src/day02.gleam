@@ -50,7 +50,6 @@ pub fn p1(file: String) -> Int {
 
 fn is_invalid_p2_for_size(nb: Int, chunk: Int) -> Bool {
   let p = int_pow(10, chunk)
-
   check(nb % p, p, nb)
 }
 
