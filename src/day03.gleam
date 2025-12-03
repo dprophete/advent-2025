@@ -1,5 +1,6 @@
 import gleam/int
 import gleam/list
+import gleam/pair
 import gleam/string
 import utils.{list_sum, pp_day, time_it}
 
@@ -21,10 +22,6 @@ fn comp_with_idx(v1: #(Int, Int), v2: #(Int, Int)) {
   int.compare(v1.0, v2.0)
 }
 
-fn val_idx_tuple(v, i) {
-  #(v, i)
-}
-
 // --------------------------------------------------------------------------------
 // p1
 // --------------------------------------------------------------------------------
@@ -33,7 +30,7 @@ pub fn p1(file: String) -> Int {
   parse_content(file)
   |> list.map(fn(bank) {
     let Bank(batteries) = bank
-    let batteries_with_idx = batteries |> list.index_map(val_idx_tuple)
+    let batteries_with_idx = batteries |> list.index_map(pair.new)
 
     let assert Ok(#(v1, i1)) =
       batteries_with_idx
@@ -57,18 +54,17 @@ pub fn p2(file: String) -> Int {
   |> list.map(fn(bank) {
     let Bank(batteries) = bank
 
-    let #(_, res) =
-      list.range(12, 1)
-      |> list.fold(#(batteries, 0), fn(acc, remaining) {
-        let #(lst, res) = acc
-        let lst_with_idx = lst |> list.index_map(val_idx_tuple)
-        let assert Ok(#(v, i)) =
-          lst_with_idx
-          |> list.take(list.length(lst) + 1 - remaining)
-          |> list.max(comp_with_idx)
-        #(lst |> list.drop(i + 1), res * 10 + v)
-      })
-    res
+    list.range(12, 1)
+    |> list.fold(#(batteries, 0), fn(acc, remaining) {
+      let #(lst, res) = acc
+      let lst_with_idx = lst |> list.index_map(pair.new)
+      let assert Ok(#(v, i)) =
+        lst_with_idx
+        |> list.take(list.length(lst) + 1 - remaining)
+        |> list.max(comp_with_idx)
+      #(lst |> list.drop(i + 1), res * 10 + v)
+    })
+    |> pair.second()
   })
   |> list_sum()
 }
