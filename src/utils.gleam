@@ -1,9 +1,52 @@
 import gleam/float
 import gleam/format.{printf}
+import gleam/int
 import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import simplifile
+
+pub fn nb_digits(nb: Int) -> Int {
+  case nb {
+    0 -> 1
+    _ -> {
+      let abs_nb = if_then_else(nb < 0, -nb, nb)
+      abs_nb
+      |> int_log
+      |> float.to_precision(10)
+      |> float.floor
+      |> float.round
+      |> int.add(1)
+    }
+  }
+}
+
+pub fn int_pow(base: Int, exp: Int) -> Int {
+  let assert Ok(res) = int.power(base, int.to_float(exp))
+  float.round(res)
+}
+
+pub fn float_pow(base: Float, exp: Float) -> Float {
+  let assert Ok(res) = float.power(base, exp)
+  res
+}
+
+pub fn int_ln(nb: Int) -> Float {
+  nb |> int.to_float |> float_ln
+}
+
+pub fn int_log(nb: Int) -> Float {
+  nb |> int.to_float |> float_log
+}
+
+pub fn float_ln(nb: Float) -> Float {
+  let assert Ok(res) = nb |> float.logarithm
+  res
+}
+
+pub fn float_log(nb: Float) -> Float {
+  float_ln(nb) /. float_ln(10.0)
+}
 
 pub fn pp_day(txt: String) {
   printf("\n#### ~s\n", txt)
