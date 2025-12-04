@@ -42,6 +42,21 @@ pub fn without_border(matrix: Matrix(a)) -> Matrix(a) {
   from_list(trimmed_rows)
 }
 
+pub fn find_all(m: Matrix(a), predicate: fn(V2) -> Bool) -> List(V2) {
+  list.range(0, m.height - 1)
+  |> list.flat_map(fn(y) {
+    list.range(0, m.width - 1)
+    |> list.map(fn(x) {
+      let v = v2.new(x, y)
+      case predicate(v) {
+        True -> Some(v)
+        False -> None
+      }
+    })
+    |> option.values()
+  })
+}
+
 // pub fn find_first(matrix: Matrix(a), value: a) -> Option(V2) {
 //   matrix.rows
 //   |> list.f
