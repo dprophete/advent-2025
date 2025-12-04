@@ -1,5 +1,5 @@
+import gleam/function
 import gleam/list
-import gleam/option.{type Option, None, Some}
 import gleam/string
 import v2.{type V2}
 
@@ -47,14 +47,14 @@ pub fn find_all(m: Matrix(a), predicate: fn(a, V2) -> Bool) -> List(V2) {
     m
     |> map(fn(cell, v) {
       case predicate(cell, v) {
-        True -> Some(v)
-        False -> None
+        True -> Ok(v)
+        False -> Error(Nil)
       }
     })
 
   m2.rows
   |> list.flatten
-  |> option.values
+  |> list.filter_map(function.identity)
 }
 
 pub fn map(m: Matrix(a), f: fn(a, V2) -> b) -> Matrix(b) {
@@ -70,14 +70,14 @@ pub fn is_in(m: Matrix(a), v: V2) -> Bool {
   v.x >= 0 && v.x < m.width && v.y >= 0 && v.y < m.height
 }
 
-pub fn get(m: Matrix(a), at v: V2) -> Option(a) {
+pub fn get(m: Matrix(a), at v: V2) -> Result(a, Nil) {
   case is_in(m, v) {
     True -> {
       let assert Ok(row) = m.rows |> list.drop(v.y) |> list.first()
       let assert Ok(value) = row |> list.drop(v.x) |> list.first()
-      Some(value)
+      Ok(value)
     }
-    False -> None
+    False -> Error(Nil)
   }
 }
 
@@ -109,17 +109,11 @@ pub fn with_size(width: Int, height: Int, default: a) -> Matrix(a) {
 }
 
 pub fn neighbors(m: Matrix(a), v: V2) -> List(a) {
-  v
-  |> v2.neighbors()
-  |> list.map(get(m, _))
-  |> option.values()
+  v |> v2.neighbors() |> list.filter_map(get(m, _))
 }
 
 pub fn around(m: Matrix(a), v: V2) -> List(a) {
-  v
-  |> v2.around()
-  |> list.map(get(m, _))
-  |> option.values()
+  v |> v2.around() |> list.filter_map(get(m, _))
 }
 
 pub fn pp(m: Matrix(a), pp_cell: fn(a) -> String) -> String {
