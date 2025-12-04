@@ -30,7 +30,6 @@ import v2
 
 pub fn p1(content: String) -> Int {
   let m = matrix.from_string(content, function.identity)
-  io.print(matrix.pp(m, function.identity))
   list.range(0, m.height - 1)
   |> list.map(fn(y) {
     list.range(0, m.width - 1)
