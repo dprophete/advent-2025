@@ -39,8 +39,8 @@ fn invalid_nbs_p1(range: Range) -> Int {
   |> list.fold(0, fn(acc, nb) { if_then_else(is_invalid_p1(nb), acc + nb, acc) })
 }
 
-pub fn p1(file: String) -> Int {
-  parse_line(file)
+pub fn p1(content: String) -> Int {
+  parse_line(content)
   |> list.fold(0, fn(acc, range) { acc + invalid_nbs_p1(range) })
 }
 
@@ -95,8 +95,8 @@ fn invalid_nbs_p2(range: Range) -> Int {
   |> list.fold(0, fn(acc, nb) { if_then_else(is_invalid_p2(nb), acc + nb, acc) })
 }
 
-pub fn p2(file: String) -> Int {
-  parse_line(file)
+pub fn p2(content: String) -> Int {
+  parse_line(content)
   |> list.fold(0, fn(acc, range) { acc + invalid_nbs_p2(range) })
 }
 

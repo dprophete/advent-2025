@@ -28,8 +28,8 @@ fn comp_with_idx(v1: #(Int, Int), v2: #(Int, Int)) {
 // p1
 // --------------------------------------------------------------------------------
 
-pub fn p1(file: String) -> Int {
-  parse_content(file)
+pub fn p1(content: String) -> Int {
+  parse_content(content)
   |> list.map(fn(bank) {
     let Bank(batteries) = bank
     let batteries_with_idx = batteries |> list.index_map(pair.new)
@@ -51,8 +51,8 @@ pub fn p1(file: String) -> Int {
 // p2
 // --------------------------------------------------------------------------------
 
-pub fn p2(file: String) -> Int {
-  parse_content(file)
+pub fn p2(content: String) -> Int {
+  parse_content(content)
   |> list.map(fn(bank) {
     let Bank(batteries) = bank
 
