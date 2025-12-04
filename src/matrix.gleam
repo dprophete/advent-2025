@@ -29,67 +29,67 @@ pub fn from_string(content: String, parse_cell: fn(String) -> a) -> Matrix(a) {
   from_list(rows)
 }
 
-pub fn without_border(matrix: Matrix(a)) -> Matrix(a) {
+pub fn without_border(m: Matrix(a)) -> Matrix(a) {
   let trimmed_rows =
-    matrix.rows
+    m.rows
     |> list.drop(1)
-    |> list.take(matrix.height - 2)
+    |> list.take(m.height - 2)
     |> list.map(fn(row) {
       row
       |> list.drop(1)
-      |> list.take(matrix.width - 2)
+      |> list.take(m.width - 2)
     })
   from_list(trimmed_rows)
 }
 
-pub fn find_all(m: Matrix(a), predicate: fn(V2) -> Bool) -> List(V2) {
-  list.range(0, m.height - 1)
-  |> list.flat_map(fn(y) {
-    list.range(0, m.width - 1)
-    |> list.map(fn(x) {
-      let v = v2.new(x, y)
-      case predicate(v) {
+pub fn find_all(m: Matrix(a), predicate: fn(a, V2) -> Bool) -> List(V2) {
+  let m2 =
+    m
+    |> map(fn(cell, v) {
+      case predicate(cell, v) {
         True -> Some(v)
         False -> None
       }
     })
-    |> option.values()
-  })
+
+  m2.rows
+  |> list.flatten
+  |> option.values
 }
 
-// pub fn find_first(matrix: Matrix(a), value: a) -> Option(V2) {
-//   matrix.rows
-//   |> list.f
-//   todo
-// matrix.rows
-// |> list.indexed()
-// |> list.flat_map(fn({row, y}) {
-//   row
-//   |> list.indexed()
-//   |> list.filter_map(fn({cell, x}) {
-//     if predicate(cell) {
-//       Some({x: x, y: y})
-//     } else {
-//       None
-//     }
-//   })
-// })
-// |> list.head()
-// }
-
-pub fn is_in(matrix: Matrix(a), v: V2) -> Bool {
-  v.x >= 0 && v.x < matrix.width && v.y >= 0 && v.y < matrix.height
+pub fn map(m: Matrix(a), f: fn(a, V2) -> b) -> Matrix(b) {
+  let new_rows =
+    m.rows
+    |> list.index_map(fn(row, y) {
+      row |> list.index_map(fn(cell, x) { f(cell, v2.new(x, y)) })
+    })
+  from_list(new_rows)
 }
 
-pub fn get(matrix: Matrix(a), at v: V2) -> Option(a) {
-  case is_in(matrix, v) {
+pub fn is_in(m: Matrix(a), v: V2) -> Bool {
+  v.x >= 0 && v.x < m.width && v.y >= 0 && v.y < m.height
+}
+
+pub fn get(m: Matrix(a), at v: V2) -> Option(a) {
+  case is_in(m, v) {
     True -> {
-      let assert Ok(row) = matrix.rows |> list.drop(v.y) |> list.first()
+      let assert Ok(row) = m.rows |> list.drop(v.y) |> list.first()
       let assert Ok(value) = row |> list.drop(v.x) |> list.first()
       Some(value)
     }
     False -> None
   }
+}
+
+// a little heavy... we recreate the whole matrix just to change a value
+pub fn set(m: Matrix(a), at v: V2, to value: a) -> Matrix(a) {
+  m
+  |> map(fn(cell, pos) {
+    case pos == v {
+      True -> value
+      False -> cell
+    }
+  })
 }
 
 pub fn with_size(width: Int, height: Int, default: a) -> Matrix(a) {
@@ -98,22 +98,22 @@ pub fn with_size(width: Int, height: Int, default: a) -> Matrix(a) {
   from_list(rows)
 }
 
-pub fn neighbors(matrix: Matrix(a), v: V2) -> List(a) {
+pub fn neighbors(m: Matrix(a), v: V2) -> List(a) {
   v
   |> v2.neighbors()
-  |> list.map(get(matrix, _))
+  |> list.map(get(m, _))
   |> option.values()
 }
 
-pub fn around(matrix: Matrix(a), v: V2) -> List(a) {
+pub fn around(m: Matrix(a), v: V2) -> List(a) {
   v
   |> v2.around()
-  |> list.map(get(matrix, _))
+  |> list.map(get(m, _))
   |> option.values()
 }
 
-pub fn pp(matrix: Matrix(a), pp_cell: fn(a) -> String) -> String {
-  matrix.rows
+pub fn pp(m: Matrix(a), pp_cell: fn(a) -> String) -> String {
+  m.rows
   |> list.map(fn(row) {
     row
     |> list.map(pp_cell)

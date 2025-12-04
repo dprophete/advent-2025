@@ -1,6 +1,5 @@
 import gleam/function
 import gleam/list
-import gleam/option.{Some}
 import matrix
 import utils.{pp_day, time_it}
 import v2.{type V2}
@@ -12,9 +11,9 @@ import v2.{type V2}
 pub fn p1(content: String) -> Int {
   let m = matrix.from_string(content, function.identity)
 
-  let can_move = fn(v: V2) -> Bool {
-    case matrix.get(m, v) {
-      Some("@") -> {
+  let can_move = fn(cell: String, v: V2) -> Bool {
+    case cell {
+      "@" -> {
         let nb_rolls =
           matrix.around(m, v)
           |> list.filter(fn(cell) { cell == "@" })
