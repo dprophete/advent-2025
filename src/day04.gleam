@@ -1,28 +1,9 @@
-import gleam/format.{printf}
 import gleam/function
-import gleam/int
-import gleam/io
 import gleam/list
-import gleam/option.{type Option, None, Some}
-import gleam/pair
-import gleam/string
-import matrix.{type Matrix}
+import gleam/option.{Some}
+import matrix
 import utils.{if_then_else, list_sum, pp_day, time_it}
 import v2
-
-// type Bank {
-//   Bank(batteries: List(Int))
-// }
-//
-// fn parse_content(content: String) -> List(Bank) {
-//   content
-//   |> string.split("\n")
-//   |> list.map(parse_line)
-// }
-//
-// fn parse_line(line: String) -> Bank {
-//   Bank(batteries: line |> string.split("") |> list.filter_map(int.parse))
-// }
 
 // --------------------------------------------------------------------------------
 // p1
