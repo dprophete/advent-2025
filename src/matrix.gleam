@@ -92,6 +92,16 @@ pub fn set(m: Matrix(a), at v: V2, to value: a) -> Matrix(a) {
   })
 }
 
+pub fn set_all(m: Matrix(a), vals: List(#(V2, a))) -> Matrix(a) {
+  m
+  |> map(fn(cell, pos) {
+    case list.key_find(vals, pos) {
+      Ok(value) -> value
+      _ -> cell
+    }
+  })
+}
+
 pub fn with_size(width: Int, height: Int, default: a) -> Matrix(a) {
   let row = list.repeat(default, width)
   let rows = list.repeat(row, height)

@@ -1,44 +1,81 @@
-import gleam/function
 import gleam/list
-import matrix
+import matrix.{type Matrix}
 import utils.{pp_day, time_it}
 import v2.{type V2}
+
+type Cell {
+  Roll
+  Empty
+  X
+}
+
+// fn pp_cell(cell: Cell) -> String {
+//   case cell {
+//     Roll -> "@"
+//     Empty -> "."
+//     X -> "X"
+//   }
+// }
+
+fn parse_cell(s: String) -> Cell {
+  case s {
+    "@" -> Roll
+    "." -> Empty
+    "X" -> X
+    _ -> panic as "Invalid cell character"
+  }
+}
+
+fn can_move(m: Matrix(Cell), cell: Cell, v: V2) -> Bool {
+  case cell {
+    Roll -> {
+      let nb_rolls =
+        matrix.around(m, v)
+        |> list.filter(fn(cell) { cell == Roll })
+        |> list.length()
+      nb_rolls < 4
+    }
+    _ -> False
+  }
+}
 
 // --------------------------------------------------------------------------------
 // p1
 // --------------------------------------------------------------------------------
 
 pub fn p1(content: String) -> Int {
-  let m = matrix.from_string(content, function.identity)
-
-  let can_move = fn(cell: String, v: V2) -> Bool {
-    case cell {
-      "@" -> {
-        let nb_rolls =
-          matrix.around(m, v)
-          |> list.filter(fn(cell) { cell == "@" })
-          |> list.length()
-        nb_rolls < 4
-      }
-      _ -> False
-    }
-  }
-
-  matrix.find_all(m, can_move) |> list.length()
+  let m = matrix.from_string(content, parse_cell)
+  matrix.find_all(m, fn(cell, v) { can_move(m, cell, v) }) |> list.length()
 }
 
 // --------------------------------------------------------------------------------
 // p2
 // --------------------------------------------------------------------------------
 
+fn helper(m: Matrix(Cell), total_removed: Int) -> Int {
+  let movable_rolls = matrix.find_all(m, fn(cell, v) { can_move(m, cell, v) })
+  let nb_removed = list.length(movable_rolls)
+  let m_without_rolls =
+    matrix.set_all(m, movable_rolls |> list.map(fn(v) { #(v, Empty) }))
+  case nb_removed {
+    0 -> total_removed
+    _ -> helper(m_without_rolls, total_removed + nb_removed)
+  }
+}
+
+pub fn p2(content: String) -> Int {
+  let m = matrix.from_string(content, parse_cell)
+  helper(m, 0)
+}
+
 // --------------------------------------------------------------------------------
 // main
 // --------------------------------------------------------------------------------
 
 pub fn main() {
-  pp_day("Day 3: Lobby")
+  pp_day("Day 4: Printing Department")
   assert time_it(p1, "p1", "data/04_sample.txt") == 13
   assert time_it(p1, "p1", "data/04_input.txt") == 1370
-  // assert time_it(p2, "p2", "data/04_sample.txt") == 3_121_910_778_619
-  // assert time_it(p2, "p2", "data/04_input.txt") == 170_025_781_683_941
+  assert time_it(p2, "p2", "data/04_sample.txt") == 43
+  assert time_it(p2, "p2", "data/04_input.txt") == 8437
 }
