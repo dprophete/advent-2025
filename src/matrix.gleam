@@ -61,20 +61,20 @@ pub fn map(m: Matrix(a), f: fn(a, V2) -> b) -> Matrix(b) {
   let new_rows =
     m.rows
     |> list.index_map(fn(row, y) {
-      row |> list.index_map(fn(cell, x) { f(cell, v2.new(x, y)) })
+      row |> list.index_map(fn(cell, x) { f(cell, #(x, y)) })
     })
   from_list(new_rows)
 }
 
 pub fn is_in(m: Matrix(a), v: V2) -> Bool {
-  v.x >= 0 && v.x < m.width && v.y >= 0 && v.y < m.height
+  v.0 >= 0 && v.0 < m.width && v.1 >= 0 && v.1 < m.height
 }
 
 pub fn get(m: Matrix(a), at v: V2) -> Result(a, Nil) {
   case is_in(m, v) {
     True -> {
-      let assert Ok(row) = m.rows |> list.drop(v.y) |> list.first()
-      let assert Ok(value) = row |> list.drop(v.x) |> list.first()
+      let assert Ok(row) = m.rows |> list.drop(v.1) |> list.first()
+      let assert Ok(value) = row |> list.drop(v.0) |> list.first()
       Ok(value)
     }
     False -> Error(Nil)
