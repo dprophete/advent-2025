@@ -22,7 +22,7 @@ pub fn pp(v: V2) -> String {
 }
 
 pub fn add(v1: V2, v2: V2) -> V2 {
-  V2(v1.x + v2.x, v2.x + v2.y)
+  V2(v1.x + v2.x, v1.y + v2.y)
 }
 
 pub fn sub(v1: V2, v2: V2) -> V2 {
@@ -63,12 +63,12 @@ pub fn neighbors(v: V2) -> List(V2) {
 pub fn around(v: V2) -> List(V2) {
   [
     add(v, V2(-1, -1)),
-    add(v, up),
+    add(v, V2(0, -1)),
     add(v, V2(1, -1)),
-    add(v, right),
-    add(v, V2(1, 1)),
-    add(v, down),
+    add(v, V2(-1, 0)),
+    add(v, V2(1, 0)),
     add(v, V2(-1, 1)),
-    add(v, left),
+    add(v, V2(0, 1)),
+    add(v, V2(1, 1)),
   ]
 }
