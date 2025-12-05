@@ -1,7 +1,7 @@
 import gleam/int
 import gleam/list
 import gleam/string
-import utils.{pp_day, time_it}
+import utils.{list_sum, pp_day, time_it}
 
 type Range {
   Range(low: Int, high: Int)
@@ -38,14 +38,60 @@ pub fn p1(content: String) -> Int {
 // p2
 // --------------------------------------------------------------------------------
 
+fn split_range_by_edges(range: Range, edges: List(Int)) -> List(Range) {
+  // one of the edges is the low, one is the high
+  edges
+  |> list.drop_while(fn(e) { e < range.low })
+  |> list.take_while(fn(e) { e <= range.high })
+  |> list.window_by_2()
+  |> list.map(fn(edge_pair) { Range(low: edge_pair.0, high: edge_pair.1) })
+}
+
+fn combine_ranges(ranges: List(Range)) -> List(Range) {
+  ranges
+  |> list.fold([], fn(acc: List(Range), r: Range) {
+    case acc {
+      [] -> [r]
+      [hd, ..tail] -> {
+        case hd.high == r.low {
+          True -> [Range(low: hd.low, high: r.high), ..tail]
+          False -> [r, ..acc]
+        }
+      }
+    }
+  })
+  |> list.reverse()
+}
+
+pub fn p2(content: String) -> Int {
+  let assert Ok(#(ranges, _)) = string.split_once(content, "\n\n")
+  let ranges: List(Range) =
+    ranges
+    |> string.split("\n")
+    |> list.map(parse_range)
+  // find all the low/highs
+  let all_edges =
+    ranges
+    |> list.flat_map(fn(r) { [r.low, r.high] })
+    |> list.sort(int.compare)
+
+  ranges
+  |> list.flat_map(fn(r) { split_range_by_edges(r, all_edges) })
+  |> list.unique()
+  |> list.sort(fn(r1, r2) { int.compare(r1.low, r2.low) })
+  |> combine_ranges()
+  |> list.map(fn(r) { r.high - r.low + 1 })
+  |> list_sum()
+}
+
 // --------------------------------------------------------------------------------
 // main
 // --------------------------------------------------------------------------------
 
 pub fn main() {
-  pp_day("Day 4: Printing Department")
+  pp_day("Day 5: Cafeteria")
   assert time_it(p1, "p1", "data/05_sample.txt") == 3
   assert time_it(p1, "p1", "data/05_input.txt") == 617
-  // assert time_it(p2, "p2", "data/05_sample.txt") == 43
-  // assert time_it(p2, "p2", "data/05_input.txt") == 8437
+  assert time_it(p2, "p2", "data/05_sample.txt") == 14
+  assert time_it(p2, "p2", "data/05_input.txt") == 338_258_295_736_104
 }
