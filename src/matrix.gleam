@@ -1,5 +1,7 @@
+import gleam/dict.{type Dict}
 import gleam/function
 import gleam/list
+import gleam/result
 import gleam/string
 import v2.{type V2}
 
@@ -83,23 +85,11 @@ pub fn get(m: Matrix(a), at v: V2) -> Result(a, Nil) {
 
 // a little heavy... we recreate the whole matrix just to change a value
 pub fn set(m: Matrix(a), at v: V2, to value: a) -> Matrix(a) {
-  m
-  |> map(fn(cell, pos) {
-    case pos == v {
-      True -> value
-      False -> cell
-    }
-  })
+  set_all(m, dict.from_list([#(v, value)]))
 }
 
-pub fn set_all(m: Matrix(a), vals: List(#(V2, a))) -> Matrix(a) {
-  m
-  |> map(fn(cell, pos) {
-    case list.key_find(vals, pos) {
-      Ok(value) -> value
-      _ -> cell
-    }
-  })
+pub fn set_all(m: Matrix(a), vals: Dict(V2, a)) -> Matrix(a) {
+  m |> map(fn(cell, pos) { dict.get(vals, pos) |> result.unwrap(cell) })
 }
 
 pub fn with_size(width: Int, height: Int, default: a) -> Matrix(a) {
