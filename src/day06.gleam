@@ -1,10 +1,7 @@
 import gleam/int
 import gleam/list
-import gleam/pair
 import gleam/string
-import utils.{
-  if_then_else, int_parse, list_sum, pp_day, split_on_spaces, time_it,
-}
+import utils.{if_then_else, list_sum, pp_day, split_on_spaces, time_it}
 
 type Op {
   Add
@@ -80,7 +77,7 @@ pub fn p2(content: String) -> Int {
     transposed_content
     |> string.split("\n")
     |> list.map(fn(line) {
-      line |> string.trim |> split_on_spaces |> list.filter_map(int.parse)
+      line |> split_on_spaces |> list.filter_map(int.parse)
     })
     |> list.reverse()
 
