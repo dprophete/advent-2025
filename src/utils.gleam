@@ -2,10 +2,16 @@ import gleam/float
 import gleam/format.{printf}
 import gleam/int
 import gleam/list
+import gleam/regexp
 import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import simplifile
+
+pub fn split_on_spaces(txt: String) -> List(String) {
+  let assert Ok(re_spaces) = regexp.from_string("\\s+")
+  regexp.split(re_spaces, txt)
+}
 
 pub fn arr_to_pair(arr: List(a)) -> #(a, a) {
   let assert [a, b] = arr
