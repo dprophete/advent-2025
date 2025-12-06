@@ -67,28 +67,24 @@ pub fn p2(content: String) -> Int {
   let ops: List(Op) =
     ops |> split_on_spaces |> list.map(parse_op) |> list.reverse()
 
-  let all_nbs_as_strings: List(String) =
+  let transposed_content: String =
     rest
     |> list.map(string.to_graphemes)
     |> list.transpose()
     |> list.map(string.join(_, ""))
     |> list.map(string.trim)
+    |> list.map(fn(s) { if_then_else(s == "", "\n", s) })
+    |> string.join(" ")
 
-  // at this point, all_nbs_as_strings is going to be ["234", "23", "43", "", "23", "53", "", ...]
-  // basically a "" means that it's a new group of numbers
-  let all_groups =
-    all_nbs_as_strings
-    |> list.append([""])
-    |> list.fold(#([], []), fn(acc, el) {
-      let #(groups, current_group) = acc
-      case el {
-        "" -> #([current_group, ..groups], [])
-        _ -> #(groups, [int_parse(el), ..current_group])
-      }
+  let lines_of_nbs: List(List(Int)) =
+    transposed_content
+    |> string.split("\n")
+    |> list.map(fn(line) {
+      line |> string.trim |> split_on_spaces |> list.filter_map(int.parse)
     })
-    |> pair.first
+    |> list.reverse()
 
-  list.zip(ops, all_groups)
+  list.zip(ops, lines_of_nbs)
   |> list.map(fn(tuple) { eval_line(tuple.0, tuple.1) })
   |> list_sum()
 }
