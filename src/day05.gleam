@@ -1,23 +1,17 @@
 import gleam/int
 import gleam/list
 import gleam/string
-import utils.{list_sum, pp_day, time_it}
+import utils.{arr_to_pair, list_sum, pp_day, time_it}
 
-type Range {
-  Range(low: Int, high: Int)
-}
-
-fn parse_range(line: String) -> Range {
-  let assert [low, high] = string.split(line, "-") |> list.filter_map(int.parse)
-  Range(low: low, high: high)
-}
+type Range =
+  #(Int, Int)
 
 // --------------------------------------------------------------------------------
 // p1
 // --------------------------------------------------------------------------------
 
 fn is_fresh(range: Range, id: Int) -> Bool {
-  id >= range.low && id <= range.high
+  id >= range.0 && id <= range.1
 }
 
 pub fn p1(content: String) -> Int {
@@ -25,7 +19,9 @@ pub fn p1(content: String) -> Int {
   let ranges: List(Range) =
     ranges
     |> string.split("\n")
-    |> list.map(parse_range)
+    |> list.map(fn(range_str) {
+      string.split(range_str, "-") |> list.filter_map(int.parse) |> arr_to_pair
+    })
   let ids: List(Int) = string.split(ids, "\n") |> list.filter_map(int.parse)
 
   let is_fresh = fn(id) {
@@ -41,10 +37,10 @@ pub fn p1(content: String) -> Int {
 fn split_range_by_edges(range: Range, edges: List(Int)) -> List(Range) {
   // one of the edges is the low, one is the high
   edges
-  |> list.drop_while(fn(e) { e < range.low })
-  |> list.take_while(fn(e) { e <= range.high })
+  |> list.drop_while(fn(e) { e < range.0 })
+  |> list.take_while(fn(e) { e <= range.1 })
   |> list.window_by_2()
-  |> list.map(fn(edge_pair) { Range(low: edge_pair.0, high: edge_pair.1) })
+  |> list.map(fn(edge_pair) { #(edge_pair.0, edge_pair.1) })
 }
 
 fn combine_ranges(ranges: List(Range)) -> List(Range) {
@@ -53,8 +49,8 @@ fn combine_ranges(ranges: List(Range)) -> List(Range) {
     case acc {
       [] -> [r]
       [hd, ..tail] -> {
-        case hd.high == r.low {
-          True -> [Range(low: hd.low, high: r.high), ..tail]
+        case hd.1 == r.0 {
+          True -> [#(hd.0, r.1), ..tail]
           False -> [r, ..acc]
         }
       }
@@ -68,19 +64,21 @@ pub fn p2(content: String) -> Int {
   let ranges: List(Range) =
     ranges
     |> string.split("\n")
-    |> list.map(parse_range)
+    |> list.map(fn(range_str) {
+      string.split(range_str, "-") |> list.filter_map(int.parse) |> arr_to_pair
+    })
   // find all the low/highs
   let all_edges =
     ranges
-    |> list.flat_map(fn(r) { [r.low, r.high] })
+    |> list.flat_map(fn(r) { [r.0, r.1] })
     |> list.sort(int.compare)
 
   ranges
   |> list.flat_map(fn(r) { split_range_by_edges(r, all_edges) })
   |> list.unique()
-  |> list.sort(fn(r1, r2) { int.compare(r1.low, r2.low) })
+  |> list.sort(fn(r1, r2) { int.compare(r1.0, r2.0) })
   |> combine_ranges()
-  |> list.map(fn(r) { r.high - r.low + 1 })
+  |> list.map(fn(r) { r.1 - r.0 + 1 })
   |> list_sum()
 }
 

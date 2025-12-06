@@ -1,19 +1,16 @@
 import gleam/int
 import gleam/list
 import gleam/string
-import utils.{if_then_else, int_pow, nb_digits, pp_day, time_it}
+import utils.{arr_to_pair, if_then_else, int_pow, nb_digits, pp_day, time_it}
 
-type Range {
-  Range(low: Int, high: Int)
-}
+type Range =
+  #(Int, Int)
 
 fn parse_line(line: String) -> List(Range) {
   line
   |> string.split(",")
   |> list.map(fn(range_str) {
-    let assert [low, high] =
-      string.split(range_str, "-") |> list.filter_map(int.parse)
-    Range(low: low, high: high)
+    string.split(range_str, "-") |> list.filter_map(int.parse) |> arr_to_pair
   })
 }
 
@@ -35,7 +32,7 @@ fn is_invalid_p1(nb: Int) -> Bool {
 
 fn invalid_nbs_p1(range: Range) -> Int {
   // check all numbers in range and count invalid ones
-  list.range(range.low, range.high)
+  list.range(range.0, range.1)
   |> list.fold(0, fn(acc, nb) { if_then_else(is_invalid_p1(nb), acc + nb, acc) })
 }
 
@@ -91,7 +88,7 @@ fn is_invalid_p2(nb: Int) -> Bool {
 }
 
 fn invalid_nbs_p2(range: Range) -> Int {
-  list.range(range.low, range.high)
+  list.range(range.0, range.1)
   |> list.fold(0, fn(acc, nb) { if_then_else(is_invalid_p2(nb), acc + nb, acc) })
 }
 

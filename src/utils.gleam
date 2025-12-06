@@ -7,6 +7,11 @@ import gleam/time/duration
 import gleam/time/timestamp
 import simplifile
 
+pub fn arr_to_pair(arr: List(a)) -> #(a, a) {
+  let assert [a, b] = arr
+  #(a, b)
+}
+
 pub fn list_sum(lst: List(Int)) -> Int {
   list.fold(lst, 0, fn(acc, nb) { acc + nb })
 }
