@@ -8,6 +8,15 @@ import gleam/time/duration
 import gleam/time/timestamp
 import simplifile
 
+pub fn int_parse(txt: String) -> Int {
+  let assert Ok(nb) = int.parse(txt)
+  nb
+}
+
+pub fn drop_last(lst: List(a)) -> List(a) {
+  lst |> list.take(list.length(lst) - 1)
+}
+
 pub fn split_on_spaces(txt: String) -> List(String) {
   let assert Ok(re_spaces) = regexp.from_string("\\s+")
   regexp.split(re_spaces, txt)
