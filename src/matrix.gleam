@@ -169,7 +169,7 @@ pub fn get(m: Matrix(a), at v: V2) -> Result(a, Nil) {
 // a little heavy... we recreate the whole matrix just to change a value
 pub fn set(m: Matrix(a), at v: V2, to value: a) -> Matrix(a) {
   case m {
-    MatrixRows(_, _, _) -> m |> set_all(dict.from_list([#(v, value)]))
+    MatrixRows(_, _, _) -> m |> set_all([#(v, value)])
 
     MatrixDict(d, width, height) -> {
       let new_dict = d |> dict.insert(v, value)
@@ -178,7 +178,8 @@ pub fn set(m: Matrix(a), at v: V2, to value: a) -> Matrix(a) {
   }
 }
 
-pub fn set_all(m: Matrix(a), vals: Dict(V2, a)) -> Matrix(a) {
+pub fn set_all(m: Matrix(a), vals: List(#(V2, a))) -> Matrix(a) {
+  let vals = dict.from_list(vals)
   case m {
     MatrixRows(_, _, _) -> {
       m |> map(fn(v, cell) { vals |> dict.get(v) |> result.unwrap(cell) })

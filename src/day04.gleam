@@ -1,4 +1,3 @@
-import gleam/dict
 import gleam/list
 import matrix.{type Matrix}
 import utils.{pp_day, time_it}
@@ -56,7 +55,7 @@ pub fn p1(content: String) -> Int {
 fn helper(m: Matrix(Cell), total_removed: Int) -> Int {
   let movable_rolls = matrix.find_all(m, fn(v, cell) { can_move(m, cell, v) })
   let nb_removed = list.length(movable_rolls)
-  let new_cells = movable_rolls |> list.map(fn(v) { #(v, X) }) |> dict.from_list
+  let new_cells = movable_rolls |> list.map(fn(v) { #(v, X) })
   let m_without_rolls = matrix.set_all(m, new_cells)
   case nb_removed {
     0 -> total_removed
