@@ -16,6 +16,10 @@ fn parse_op(op_str: String) -> Op {
   }
 }
 
+fn parse_ints(line: String) -> List(Int) {
+  line |> split_on_spaces |> list.filter_map(int.parse)
+}
+
 fn eval_op(a: Int, op: Op, b: Int) -> Int {
   case op {
     Add -> a + b
@@ -36,15 +40,13 @@ fn eval_line(op: Op, nbs: List(Int)) -> Int {
 
 pub fn p1(content: String) -> Int {
   let lines = string.split(content, "\n")
-  let assert [ops, ..rest] = list.reverse(lines)
-  let rest = list.reverse(rest)
+  let assert #(rest, [ops]) = list.split(lines, list.length(lines) - 1)
 
   let ops: List(Op) = ops |> split_on_spaces |> list.map(parse_op)
+
   let lines_of_nbs: List(List(Int)) =
     rest
-    |> list.map(fn(line) {
-      line |> split_on_spaces |> list.filter_map(int.parse)
-    })
+    |> list.map(parse_ints)
     |> list.transpose()
 
   list.zip(ops, lines_of_nbs)
@@ -58,11 +60,9 @@ pub fn p1(content: String) -> Int {
 
 pub fn p2(content: String) -> Int {
   let lines = string.split(content, "\n")
-  let assert [ops, ..rest] = list.reverse(lines)
-  let rest = list.reverse(rest)
+  let assert #(rest, [ops]) = list.split(lines, list.length(lines) - 1)
 
-  let ops: List(Op) =
-    ops |> split_on_spaces |> list.map(parse_op) |> list.reverse()
+  let ops: List(Op) = ops |> split_on_spaces |> list.map(parse_op)
 
   let transposed_content: String =
     rest
@@ -76,10 +76,7 @@ pub fn p2(content: String) -> Int {
   let lines_of_nbs: List(List(Int)) =
     transposed_content
     |> string.split("\n")
-    |> list.map(fn(line) {
-      line |> split_on_spaces |> list.filter_map(int.parse)
-    })
-    |> list.reverse()
+    |> list.map(parse_ints)
 
   list.zip(ops, lines_of_nbs)
   |> list.map(fn(tuple) { eval_line(tuple.0, tuple.1) })
