@@ -45,8 +45,8 @@ fn can_move(m: Matrix(Cell), cell: Cell, v: V2) -> Bool {
 // --------------------------------------------------------------------------------
 
 pub fn p1(content: String) -> Int {
-  let m = matrix.from_string(content, parse_cell)
-  matrix.find_all(m, fn(cell, v) { can_move(m, cell, v) }) |> list.length()
+  let m = matrix.from_string(matrix.AsDict, content, parse_cell)
+  matrix.find_all(m, fn(v, cell) { can_move(m, cell, v) }) |> list.length()
 }
 
 // --------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ pub fn p1(content: String) -> Int {
 // --------------------------------------------------------------------------------
 
 fn helper(m: Matrix(Cell), total_removed: Int) -> Int {
-  let movable_rolls = matrix.find_all(m, fn(cell, v) { can_move(m, cell, v) })
+  let movable_rolls = matrix.find_all(m, fn(v, cell) { can_move(m, cell, v) })
   let nb_removed = list.length(movable_rolls)
   let new_cells = movable_rolls |> list.map(fn(v) { #(v, X) }) |> dict.from_list
   let m_without_rolls = matrix.set_all(m, new_cells)
@@ -65,7 +65,7 @@ fn helper(m: Matrix(Cell), total_removed: Int) -> Int {
 }
 
 pub fn p2(content: String) -> Int {
-  let m = matrix.from_string(content, parse_cell)
+  let m = matrix.from_string(matrix.AsDict, content, parse_cell)
   helper(m, 0)
 }
 
