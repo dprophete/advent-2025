@@ -129,24 +129,19 @@ pub fn get_rows(m: Matrix(a)) -> List(List(a)) {
 pub fn find_all(m: Matrix(a), predicate: fn(V2, a) -> Bool) -> List(V2) {
   case m {
     MatrixRows(_, _, _) -> {
-      let m2 =
-        m
-        |> map(fn(v, cell) {
-          case predicate(v, cell) {
-            True -> Ok(v)
-            False -> Error(Nil)
-          }
-        })
-
-      m2
+      m
+      |> map(fn(v, cell) {
+        case predicate(v, cell) {
+          True -> Ok(v)
+          False -> Error(Nil)
+        }
+      })
       |> get_rows
       |> list.flatten
       |> list.filter_map(function.identity)
     }
 
-    MatrixDict(d, _, _) -> {
-      d |> dict.filter(predicate) |> dict.keys()
-    }
+    MatrixDict(d, _, _) -> d |> dict.filter(predicate) |> dict.keys()
   }
 }
 
@@ -174,9 +169,7 @@ pub fn get(m: Matrix(a), at v: V2) -> Result(a, Nil) {
 // a little heavy... we recreate the whole matrix just to change a value
 pub fn set(m: Matrix(a), at v: V2, to value: a) -> Matrix(a) {
   case m {
-    MatrixRows(_, _, _) -> {
-      set_all(m, dict.from_list([#(v, value)]))
-    }
+    MatrixRows(_, _, _) -> m |> set_all(dict.from_list([#(v, value)]))
 
     MatrixDict(d, width, height) -> {
       let new_dict = d |> dict.insert(v, value)
@@ -193,7 +186,7 @@ pub fn set_all(m: Matrix(a), vals: Dict(V2, a)) -> Matrix(a) {
 
     MatrixDict(d, width, height) -> {
       // combine with new values taking precendence
-      let new_dict = dict.combine(d, vals, fn(_, v) { v })
+      let new_dict = dict.combine(d, vals, fn(_, val) { val })
       MatrixDict(new_dict, width, height)
     }
   }
