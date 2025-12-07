@@ -34,6 +34,12 @@ fn eval_line(op: Op, nbs: List(Int)) -> Int {
   })
 }
 
+fn eval_ops(ops: List(Op), lines_of_nbs: List(List(Int))) -> Int {
+  list.zip(ops, lines_of_nbs)
+  |> list.map(fn(tuple) { eval_line(tuple.0, tuple.1) })
+  |> list_sum()
+}
+
 // --------------------------------------------------------------------------------
 // p1
 // --------------------------------------------------------------------------------
@@ -45,13 +51,9 @@ pub fn p1(content: String) -> Int {
   let ops: List(Op) = ops |> split_on_spaces |> list.map(parse_op)
 
   let lines_of_nbs: List(List(Int)) =
-    rest
-    |> list.map(parse_ints)
-    |> list.transpose()
+    rest |> list.map(parse_ints) |> list.transpose()
 
-  list.zip(ops, lines_of_nbs)
-  |> list.map(fn(tuple) { eval_line(tuple.0, tuple.1) })
-  |> list_sum()
+  eval_ops(ops, lines_of_nbs)
 }
 
 // --------------------------------------------------------------------------------
@@ -74,13 +76,9 @@ pub fn p2(content: String) -> Int {
     |> string.join(" ")
 
   let lines_of_nbs: List(List(Int)) =
-    transposed_content
-    |> string.split("\n")
-    |> list.map(parse_ints)
+    transposed_content |> string.split("\n") |> list.map(parse_ints)
 
-  list.zip(ops, lines_of_nbs)
-  |> list.map(fn(tuple) { eval_line(tuple.0, tuple.1) })
-  |> list_sum()
+  eval_ops(ops, lines_of_nbs)
 }
 
 // --------------------------------------------------------------------------------
