@@ -1,13 +1,15 @@
+import gleam/dict.{type Dict}
 import gleam/list
+import gleam/pair
+import gleam/result
 import matrix
-import utils.{pp_day, time_it}
+import utils.{list_sum, pp_day, time_it}
 
 type Cell {
   Start
   Empty
   Splitter
   Tachyon
-  X
 }
 
 fn parse_cell(s: String) -> Cell {
@@ -16,20 +18,18 @@ fn parse_cell(s: String) -> Cell {
     "." -> Empty
     "^" -> Splitter
     "|" -> Tachyon
-    "X" -> X
     _ -> panic as "Invalid cell character"
   }
 }
 
-fn pp_cell(cell: Cell) -> String {
-  case cell {
-    Start -> "S"
-    Empty -> "."
-    Splitter -> "^"
-    Tachyon -> "|"
-    X -> "X"
-  }
-}
+// fn pp_cell(cell: Cell) -> String {
+//   case cell {
+//     Start -> "S"
+//     Empty -> "."
+//     Splitter -> "^"
+//     Tachyon -> "|"
+//   }
+// }
 
 // --------------------------------------------------------------------------------
 // p1
@@ -40,47 +40,58 @@ pub fn p1(content: String) -> Int {
 
   let tachyons = [m.width / 2]
 
-  let res =
-    list.range(1, m.height - 1)
-    |> list.fold(#(tachyons, 1, m), fn(acc, y) {
-      let #(current_tachyons, current_count, current_m) = acc
+  list.range(1, m.height - 1)
+  |> list.fold(#(tachyons, 0), fn(acc, y) {
+    let #(current_tachyons, count) = acc
 
-      // find splitters and split beams
-      let new_tachyons =
-        current_tachyons
-        |> list.flat_map(fn(x) {
-          case matrix.get(current_m, #(x, y)) {
-            Ok(Splitter) -> [x - 1, x + 1]
-            _ -> [x]
-          }
-        })
-        |> list.unique
+    // find splitters and split beams
+    let new_tachyons =
+      current_tachyons
+      |> list.flat_map(fn(x) {
+        case matrix.get(m, #(x, y)) {
+          Ok(Splitter) -> [x - 1, x + 1]
+          _ -> [x]
+        }
+      })
 
-      // set tachyons in the new matrix
-      let new_cells = new_tachyons |> list.map(fn(x) { #(#(x, y), Tachyon) })
-      let new_m = current_m |> matrix.set_all(new_cells)
-
-      #(new_tachyons, current_count, new_m)
-    })
-  let new_m = res.2
-
-  // let's find all the splitters and figure out which ones were not reaches
-  let splitters = matrix.find_all(new_m, fn(_, cell) { cell == Splitter })
-  let nb_splits =
-    splitters
-    |> list.count(fn(v) {
-      case matrix.get(new_m, #(v.0, v.1 - 1)) {
-        Ok(Tachyon) -> True
-        _ -> False
-      }
-    })
-
-  nb_splits
+    let extra = list.length(new_tachyons) - list.length(current_tachyons)
+    #(list.unique(new_tachyons), count + extra)
+  })
+  |> pair.second
 }
 
 // --------------------------------------------------------------------------------
 // p2
 // --------------------------------------------------------------------------------
+
+pub fn p2(content: String) -> Int {
+  let m = matrix.from_string(matrix.AsDict, content, parse_cell)
+
+  // keep track of array of: (x, number of tachyons at x)
+  let tachyons = [#(m.width / 2, 1)]
+
+  list.range(1, m.height - 1)
+  |> list.fold(tachyons, fn(current_tachyons, y) {
+    // find splitters and split beams
+    current_tachyons
+    |> list.flat_map(fn(tachyon) {
+      let #(x, count) = tachyon
+      case matrix.get(m, #(x, y)) {
+        Ok(Splitter) -> [#(x - 1, count), #(x + 1, count)]
+        _ -> [tachyon]
+      }
+    })
+    // combine counts at same x
+    |> list.fold(dict.new(), fn(acc: Dict(Int, Int), tachyon) {
+      let #(x, count) = tachyon
+      let existing_count = acc |> dict.get(x) |> result.unwrap(0)
+      acc |> dict.insert(x, existing_count + count)
+    })
+    |> dict.to_list
+  })
+  |> list.map(fn(tachyon) { tachyon.1 })
+  |> list_sum()
+}
 
 // --------------------------------------------------------------------------------
 // main
@@ -90,6 +101,6 @@ pub fn main() {
   pp_day("Day 6: Trash Compactor")
   assert time_it(p1, "p1", "data/07_sample.txt") == 21
   assert time_it(p1, "p1", "data/07_input.txt") == 1573
-  // assert time_it(p2, "p2", "data/07_sample.txt") == 3_263_827
-  // assert time_it(p2, "p2", "data/07_input.txt") == 11_950_004_808_442
+  assert time_it(p2, "p2", "data/07_sample.txt") == 40
+  assert time_it(p2, "p2", "data/07_input.txt") == 15_093_663_987_272
 }
