@@ -5,6 +5,7 @@ import day04
 import day05
 import day06
 import day07
+import day08
 
 pub fn main() {
   day01.main()
@@ -14,4 +15,5 @@ pub fn main() {
   day05.main()
   day06.main()
   day07.main()
+  day08.main()
 }
