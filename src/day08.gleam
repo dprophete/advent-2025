@@ -1,4 +1,4 @@
-import gleam/format.{printf}
+// import gleam/format.{printf}
 import gleam/int
 import gleam/list
 import gleam/order.{Lt}
@@ -22,17 +22,19 @@ fn add_pos_to_group(
   |> list.append([new_group])
 }
 
-fn make_connections(
+fn make_connection(
   sorted_dists: List(#(#(V3, V3), Int)),
   groups: List(Set(V3)),
   nb_connections: Int,
   limit: Int,
-) -> #(List(#(#(V3, V3), Int)), List(Set(V3)), Int) {
-  case nb_connections == limit {
-    True -> #(sorted_dists, groups, nb_connections)
+  last_connection: #(V3, V3),
+) -> #(List(Set(V3)), #(V3, V3)) {
+  case nb_connections == limit || list.is_empty(sorted_dists) {
+    True -> #(groups, last_connection)
     False -> {
       let assert [first, ..rest] = sorted_dists
-      let #(#(pos1, pos2), _) = first
+      let #(conn, _dist) = first
+      let #(pos1, pos2) = conn
       let existing_group = fn(pos) {
         groups
         |> list.find(fn(group) { set.contains(group, pos) })
@@ -40,7 +42,13 @@ fn make_connections(
       case existing_group(pos1), existing_group(pos2) {
         Ok(group1), Ok(group2) if group1 == group2 -> {
           // both positions are already in the same group -> nothing to add
-          make_connections(rest, groups, nb_connections + 1, limit)
+          make_connection(
+            rest,
+            groups,
+            nb_connections + 1,
+            limit,
+            last_connection,
+          )
         }
         Ok(group1), Ok(group2) -> {
           // merge groups
@@ -49,32 +57,26 @@ fn make_connections(
             groups
             |> list.filter(fn(g) { g != group1 && g != group2 })
             |> list.append([new_group])
-          printf("merging groups for ~s and ~s\n", #(v3.pp(pos1), v3.pp(pos2)))
-          make_connections(rest, new_groups, nb_connections + 1, limit)
+          make_connection(rest, new_groups, nb_connections + 1, limit, conn)
         }
         Ok(group1), Error(_) -> {
           // add pos2 to group1
           let new_groups = add_pos_to_group(pos2, group1, groups)
-          printf("adding ~s to group of ~s\n", #(v3.pp(pos1), v3.pp(pos2)))
-          make_connections(rest, new_groups, nb_connections + 1, limit)
+          make_connection(rest, new_groups, nb_connections + 1, limit, conn)
         }
         Error(_), Ok(group2) -> {
           // add pos1 to group2
           let new_groups = add_pos_to_group(pos1, group2, groups)
-          printf("adding ~s to group of ~s\n", #(v3.pp(pos2), v3.pp(pos1)))
-          make_connections(rest, new_groups, nb_connections + 1, limit)
+          make_connection(rest, new_groups, nb_connections + 1, limit, conn)
         }
         _, _ -> {
           // create a new group
-          printf("creating new group for ~s and ~s\n", #(
-            v3.pp(pos2),
-            v3.pp(pos1),
-          ))
-          make_connections(
+          make_connection(
             rest,
             [set.from_list([pos1, pos2]), ..groups],
             nb_connections + 1,
             limit,
+            conn,
           )
         }
       }
@@ -82,7 +84,7 @@ fn make_connections(
   }
 }
 
-pub fn p1(content: String, limit: Int) -> Int {
+fn do_it(content: String, limit: Int) -> #(List(Set(V3)), #(V3, V3)) {
   let positions =
     content
     |> string.split("\n")
@@ -107,7 +109,11 @@ pub fn p1(content: String, limit: Int) -> Int {
     |> list.flatten
     |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
 
-  let #(_, groups, _) = make_connections(sorted_dists, [], 0, limit)
+  make_connection(sorted_dists, [], 0, limit, #(#(0, 0, 0), #(0, 0, 0)))
+}
+
+pub fn p1(content: String, limit: Int) -> Int {
+  let #(groups, _) = do_it(content, limit)
   groups
   |> list.map(set.size)
   |> list.sort(int.compare)
@@ -120,6 +126,11 @@ pub fn p1(content: String, limit: Int) -> Int {
 // p2
 // --------------------------------------------------------------------------------
 
+pub fn p2(content: String) -> Int {
+  let #(_, last_conn) = do_it(content, -1)
+  last_conn.0.0 * last_conn.1.0
+}
+
 // --------------------------------------------------------------------------------
 // main
 // --------------------------------------------------------------------------------
@@ -128,6 +139,6 @@ pub fn main() {
   pp_day("Day 8: Playground")
   assert time_it(p1(_, 10), "p1", "data/08_sample.txt") == 40
   assert time_it(p1(_, 1000), "p1", "data/08_input.txt") == 72_150
-  // assert time_it(p2, "p2", "data/08_sample.txt") == 40
-  // assert time_it(p2, "p2", "data/08_input.txt") == 15_093_663_987_272
+  assert time_it(p2, "p2", "data/08_sample.txt") == 25_272
+  assert time_it(p2, "p2", "data/08_input.txt") == 3_926_518_899
 }
