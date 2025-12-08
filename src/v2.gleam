@@ -1,5 +1,6 @@
 import dir.{type Dir, Down, Left, Right, Up}
 import gleam/int
+import gleam/order.{type Order, Eq}
 
 pub type V2 =
   #(Int, Int)
@@ -16,11 +17,22 @@ pub fn pp(v: V2) -> String {
   "(" <> int.to_string(v.0) <> "," <> int.to_string(v.1) <> ")"
 }
 
+pub fn compare(pos1: V2, pos2: V2) -> Order {
+  case int.compare(pos1.0, pos2.0) {
+    Eq -> int.compare(pos1.1, pos2.1)
+    x -> x
+  }
+}
+
 pub fn dist(v1: V2, v2: V2) -> Float {
+  let assert Ok(res) = dist_square(v1, v2) |> int.square_root
+  res
+}
+
+pub fn dist_square(v1: V2, v2: V2) -> Int {
   let d0 = v1.0 - v2.0
   let d1 = v1.1 - v2.1
-  let assert Ok(res) = d0 * d0 + d1 * d1 |> int.square_root
-  res
+  d0 * d0 + d1 * d1
 }
 
 pub fn add(v1: V2, v2: V2) -> V2 {

@@ -1,5 +1,5 @@
 import gleam/int
-import gleam/order.{type Order, Eq, Gt, Lt}
+import gleam/order.{type Order, Eq}
 
 pub type V3 =
   #(Int, Int, Int)
