@@ -31,6 +31,10 @@ pub fn list_sum(lst: List(Int)) -> Int {
   list.fold(lst, 0, fn(acc, nb) { acc + nb })
 }
 
+pub fn list_product(lst: List(Int)) -> Int {
+  list.fold(lst, 1, fn(acc, nb) { acc * nb })
+}
+
 pub fn nb_digits(nb: Int) -> Int {
   case nb {
     0 -> 1
