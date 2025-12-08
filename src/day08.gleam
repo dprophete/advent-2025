@@ -1,7 +1,7 @@
 // import gleam/format.{printf}
 import gleam/int
 import gleam/list
-import gleam/order.{Lt}
+import gleam/pair
 import gleam/set.{type Set}
 import gleam/string
 import utils.{list_product, pp_day, time_it}
@@ -23,7 +23,7 @@ fn add_pos_to_group(
 }
 
 fn make_connection(
-  sorted_dists: List(#(#(V3, V3), Int)),
+  sorted_dists: List(#(V3, V3)),
   groups: List(Set(V3)),
   nb_connections: Int,
   limit: Int,
@@ -32,8 +32,7 @@ fn make_connection(
   case nb_connections == limit || list.is_empty(sorted_dists) {
     True -> #(groups, last_connection)
     False -> {
-      let assert [first, ..rest] = sorted_dists
-      let #(conn, _dist) = first
+      let assert [conn, ..rest] = sorted_dists
       let #(pos1, pos2) = conn
       let existing_group = fn(pos) {
         groups
@@ -95,19 +94,12 @@ fn do_it(content: String, limit: Int) -> #(List(Set(V3)), #(V3, V3)) {
     })
 
   // let's compute all the distances?
-  let sorted_dists: List(#(#(V3, V3), Int)) =
-    positions
-    |> list.map(fn(pos1) {
-      positions
-      |> list.filter_map(fn(pos2) {
-        case v3.compare(pos1, pos2) {
-          Lt -> Ok(#(#(pos1, pos2), v3.dist_square(pos1, pos2)))
-          _ -> Error(Nil)
-        }
-      })
-    })
-    |> list.flatten
+  let sorted_dists: List(#(V3, V3)) =
+    list.combination_pairs(positions)
+    |> list.map(fn(pair) { #(pair, v3.dist_square(pair.0, pair.1)) })
     |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
+    // we don't need the distance anymore
+    |> list.map(pair.first)
 
   make_connection(sorted_dists, [], 0, limit, #(#(0, 0, 0), #(0, 0, 0)))
 }
@@ -127,8 +119,8 @@ pub fn p1(content: String, limit: Int) -> Int {
 // --------------------------------------------------------------------------------
 
 pub fn p2(content: String) -> Int {
-  let #(_, last_conn) = do_it(content, -1)
-  last_conn.0.0 * last_conn.1.0
+  let #(_, #(pos1, pos2)) = do_it(content, -1)
+  pos1.0 * pos2.0
 }
 
 // --------------------------------------------------------------------------------
