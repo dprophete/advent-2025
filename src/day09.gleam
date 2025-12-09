@@ -83,18 +83,25 @@ pub fn p2(content) -> Int {
     let x0 = int.min(pos1.0, pos2.0)
     let x1 = int.max(pos1.0, pos2.0)
 
-    list.range(pos1.1, pos2.1)
-    |> list.all(fn(y) {
-      let assert Ok(#(min_x, max_x)) = dict.get(min_max_per_y, y)
-      x0 >= min_x && x1 <= max_x
-    })
+    // let's short cirtcuit by checking the fisrt and last lines
+    let assert Ok(#(min_x1, max_x1)) = dict.get(min_max_per_y, pos1.1)
+    let assert Ok(#(min_x2, max_x2)) = dict.get(min_max_per_y, pos2.1)
+
+    case x0 >= min_x1 && x1 <= max_x1 && x0 >= min_x2 && x1 <= max_x2 {
+      True ->
+        list.range(pos1.1, pos2.1)
+        |> list.all(fn(y) {
+          let assert Ok(#(min_x, max_x)) = dict.get(min_max_per_y, y)
+          x0 >= min_x && x1 <= max_x
+        })
+
+      False -> False
+    }
   })
   |> list.fold(-1, fn(acc, pairs) {
     let area = area_between(pairs.0, pairs.1)
     int.max(area, acc)
   })
-  // |> echo
-  // 1351617690 but it takes 41s !!!
 }
 
 // --------------------------------------------------------------------------------
