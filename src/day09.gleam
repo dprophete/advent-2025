@@ -3,6 +3,7 @@ import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/result
+import gleam/set.{type Set}
 import gleam/string
 import utils.{arr_to_pair, pp_day, time_it}
 import v2.{type V2}
@@ -51,6 +52,11 @@ pub fn p2(content) -> Int {
     False -> vecs |> list.drop(1) |> list.append([first])
   }
 
+  // let's find all the relevant y
+  let all_ys: List(Int) =
+    vecs |> list.map(fn(v) { v.1 }) |> list.unique() |> list.sort(int.compare)
+  let all_ys_set: Set(Int) = all_ys |> set.from_list()
+
   // let's get all the vertical lines
   let lines: List(#(V2, V2)) =
     vecs |> list.sized_chunk(2) |> list.map(arr_to_pair)
@@ -66,11 +72,16 @@ pub fn p2(content) -> Int {
       }
       list.range(pt1.1, pt2.1)
       |> list.fold(acc, fn(acc2, y) {
-        let #(min_x, max_x) =
-          dict.get(acc2, y) |> result.unwrap(#(1_000_000, 0))
-        let new_min = min_x |> int.min(pt1.0) |> int.min(pt2.0)
-        let new_max = max_x |> int.max(pt1.0) |> int.max(pt2.0)
-        acc2 |> dict.insert(y, #(new_min, new_max))
+        case all_ys_set |> set.contains(y) {
+          False -> acc2
+          True -> {
+            let #(min_x, max_x) =
+              dict.get(acc2, y) |> result.unwrap(#(1_000_000, 0))
+            let new_min = min_x |> int.min(pt1.0) |> int.min(pt2.0)
+            let new_max = max_x |> int.max(pt1.0) |> int.max(pt2.0)
+            acc2 |> dict.insert(y, #(new_min, new_max))
+          }
+        }
       })
     })
 
@@ -86,10 +97,15 @@ pub fn p2(content) -> Int {
     let #(pos1, pos2) = pairs
     let x0 = int.min(pos1.0, pos2.0)
     let x1 = int.max(pos1.0, pos2.0)
+    let y0 = int.min(pos1.1, pos2.1)
+    let y1 = int.max(pos1.1, pos2.1)
 
     // let's short cirtcuit by checking the first and last lines
     case is_in_between(x0, x1, pos1.1) && is_in_between(x0, x1, pos2.1) {
-      True -> list.range(pos1.1, pos2.1) |> list.all(is_in_between(x0, x1, _))
+      True ->
+        all_ys
+        |> list.filter(fn(y) { y0 <= y && y <= y1 })
+        |> list.all(is_in_between(x0, x1, _))
       False -> False
     }
   })
