@@ -105,8 +105,8 @@ pub fn p2(content) -> Int {
 
 pub fn main() {
   pp_day("Day 8: Playground")
-  // assert time_it(p1, "p1", "data/09_sample.txt") == 50
-  // assert time_it(p1, "p1", "data/09_input.txt") == 4_745_816_424
+  assert time_it(p1, "p1", "data/09_sample.txt") == 50
+  assert time_it(p1, "p1", "data/09_input.txt") == 4_745_816_424
   assert time_it(p2, "p2", "data/09_sample.txt") == 24
   assert time_it(p2, "p2", "data/09_input.txt") == 1_351_617_690
 }
