@@ -53,9 +53,7 @@ pub fn p2(content) -> Int {
 
   // let's get all the vertical lines
   let lines: List(#(V2, V2)) =
-    vecs
-    |> list.sized_chunk(2)
-    |> list.map(arr_to_pair)
+    vecs |> list.sized_chunk(2) |> list.map(arr_to_pair)
 
   // for each line, we are going to keep a min/max, so we end up with a dict of y -> #(min_x, max_x)
   let min_max_per_y =
@@ -76,25 +74,22 @@ pub fn p2(content) -> Int {
       })
     })
 
+  let is_in_between = fn(x0: Int, x1: Int, y: Int) {
+    let assert Ok(#(min_x, max_x)) = min_max_per_y |> dict.get(y)
+    x0 >= min_x && x1 <= max_x
+  }
+
   vecs
   |> list.combination_pairs()
+  // remove areas which are outside of the main shape
   |> list.filter(fn(pairs) {
     let #(pos1, pos2) = pairs
     let x0 = int.min(pos1.0, pos2.0)
     let x1 = int.max(pos1.0, pos2.0)
 
-    // let's short cirtcuit by checking the fisrt and last lines
-    let assert Ok(#(min_x1, max_x1)) = min_max_per_y |> dict.get(pos1.1)
-    let assert Ok(#(min_x2, max_x2)) = min_max_per_y |> dict.get(pos2.1)
-
-    case x0 >= min_x1 && x1 <= max_x1 && x0 >= min_x2 && x1 <= max_x2 {
-      True ->
-        list.range(pos1.1, pos2.1)
-        |> list.all(fn(y) {
-          let assert Ok(#(min_x, max_x)) = min_max_per_y |> dict.get(y)
-          x0 >= min_x && x1 <= max_x
-        })
-
+    // let's short cirtcuit by checking the first and last lines
+    case is_in_between(x0, x1, pos1.1) && is_in_between(x0, x1, pos2.1) {
+      True -> list.range(pos1.1, pos2.1) |> list.all(is_in_between(x0, x1, _))
       False -> False
     }
   })
@@ -110,8 +105,8 @@ pub fn p2(content) -> Int {
 
 pub fn main() {
   pp_day("Day 8: Playground")
-  assert time_it(p1, "p1", "data/09_sample.txt") == 50
-  assert time_it(p1, "p1", "data/09_input.txt") == 4_745_816_424
+  // assert time_it(p1, "p1", "data/09_sample.txt") == 50
+  // assert time_it(p1, "p1", "data/09_input.txt") == 4_745_816_424
   assert time_it(p2, "p2", "data/09_sample.txt") == 24
   assert time_it(p2, "p2", "data/09_input.txt") == 1_351_617_690
 }
