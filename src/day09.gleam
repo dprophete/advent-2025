@@ -84,14 +84,14 @@ pub fn p2(content) -> Int {
     let x1 = int.max(pos1.0, pos2.0)
 
     // let's short cirtcuit by checking the fisrt and last lines
-    let assert Ok(#(min_x1, max_x1)) = dict.get(min_max_per_y, pos1.1)
-    let assert Ok(#(min_x2, max_x2)) = dict.get(min_max_per_y, pos2.1)
+    let assert Ok(#(min_x1, max_x1)) = min_max_per_y |> dict.get(pos1.1)
+    let assert Ok(#(min_x2, max_x2)) = min_max_per_y |> dict.get(pos2.1)
 
     case x0 >= min_x1 && x1 <= max_x1 && x0 >= min_x2 && x1 <= max_x2 {
       True ->
         list.range(pos1.1, pos2.1)
         |> list.all(fn(y) {
-          let assert Ok(#(min_x, max_x)) = dict.get(min_max_per_y, y)
+          let assert Ok(#(min_x, max_x)) = min_max_per_y |> dict.get(y)
           x0 >= min_x && x1 <= max_x
         })
 
