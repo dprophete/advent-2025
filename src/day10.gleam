@@ -3,11 +3,16 @@ import gleam/int
 import gleam/list
 import gleam/option.{Some}
 import gleam/regexp
+import gleam/set.{type Set}
 import gleam/string
 import utils.{int_pow, list_sum, pp_day, time_it}
 
 type Machine {
   Machine(lights: Int, buttons: List(Int), joltage: List(Int))
+}
+
+fn print_binary(nb: Int) {
+  printf("0b~.2B\n", [nb])
 }
 
 // --------------------------------------------------------------------------------
@@ -28,7 +33,7 @@ fn parse_btn(str: String) -> Int {
 fn parse_lights(str: String) -> Int {
   str
   |> string.to_graphemes()
-  |> list.reverse()
+  // |> list.reverse()
   |> list.index_map(fn(ch, idx) {
     case ch {
       "#" -> int_pow(2, idx)
@@ -36,6 +41,30 @@ fn parse_lights(str: String) -> Int {
     }
   })
   |> list_sum
+}
+
+fn invoke_btns(val: Int, btns: List(Int)) -> List(Int) {
+  btns |> list.map(fn(btn) { int.bitwise_exclusive_or(val, btn) })
+}
+
+fn loop1(
+  vals: List(Int),
+  btns: List(Int),
+  visited: Set(Int),
+  rounds: Int,
+) -> Int {
+  let next_vals =
+    vals
+    |> list.flat_map(invoke_btns(_, btns))
+    |> list.unique()
+    |> list.filter(fn(nb) { !set.contains(visited, nb) })
+
+  let next_visited = next_vals |> list.fold(visited, set.insert)
+
+  case list.any(next_vals, fn(nb) { nb == 0 }) {
+    True -> rounds
+    False -> loop1(next_vals, btns, next_visited, rounds + 1)
+  }
 }
 
 pub fn p1(content) -> Int {
@@ -50,14 +79,21 @@ pub fn p1(content) -> Int {
       let lights = parse_lights(lights)
       let joltage = joltage |> string.split(",") |> list.filter_map(int.parse)
       let buttons = buttons |> string.split(" ") |> list.map(parse_btn)
-      printf("lights: ~p, buttons: ~p, joltage: ~p\n", #(
-        lights,
-        buttons,
-        joltage,
-      ))
+      // printf("lights: ~p, buttons: ~p, joltage: ~p\n", #(
+      //   lights,
+      //   buttons,
+      //   joltage,
+      // ))
       Machine(lights, buttons, joltage)
     })
-  7
+
+  machines
+  |> list.map(fn(machine) {
+    let res = loop1([machine.lights], machine.buttons, set.new(), 1)
+    // printf("machine ~p completed in ~p rounds\n", #(machine.lights, res))
+    res
+  })
+  |> list_sum()
 }
 
 // --------------------------------------------------------------------------------
@@ -71,7 +107,9 @@ pub fn p1(content) -> Int {
 pub fn main() {
   pp_day("Day 8: Playground")
   assert time_it(p1, "p1", "data/10_sample.txt") == 7
-  // assert time_it(p1, "p1", "data/10_input.txt") == 4_745_816_424
+  assert time_it(p1, "p1", "data/10_input.txt") == 488
   // assert time_it(p2, "p2", "data/10_sample.txt") == 24
   // assert time_it(p2, "p2", "data/10_input.txt") == 1_351_617_690
+  // printf("Done ~.2B\n", [29])
+  // echo int.bitwise_exclusive_or(int.bitwise_exclusive_or(29, 25), 55)
 }
