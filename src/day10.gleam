@@ -1,4 +1,4 @@
-import gleam/format.{printf}
+// import gleam/format.{printf}
 import gleam/int
 import gleam/list
 import gleam/option.{Some}
@@ -11,8 +11,9 @@ import utils.{int_pow, list_sum, pp_day, time_it}
 // p1
 // --------------------------------------------------------------------------------
 
-type Machine1 {
+type Machine {
   Machine1(lights: Int, buttons: List(Int))
+  Machine2(buttons: List(Int), joltage: Int)
 }
 
 // (2,3) -> 2^2 + 2^3 = 4 + 8 = 12
@@ -65,7 +66,7 @@ fn loop_p1(
 pub fn p1(content) -> Int {
   let assert Ok(re_machine) = regexp.from_string("\\[(.*)\\] (.*) {(.*)}")
 
-  let machines: List(Machine1) =
+  let machines: List(Machine) =
     content
     |> string.split("\n")
     |> list.map(fn(line) {
@@ -78,7 +79,8 @@ pub fn p1(content) -> Int {
 
   machines
   |> list.map(fn(machine) {
-    loop_p1([machine.lights], machine.buttons, set.new(), 1)
+    let assert Machine1(lights, buttons) = machine
+    loop_p1([lights], buttons, set.new(), 1)
   })
   |> list_sum()
 }
@@ -86,10 +88,6 @@ pub fn p1(content) -> Int {
 // --------------------------------------------------------------------------------
 // p2
 // --------------------------------------------------------------------------------
-
-type Machine2 {
-  Machine2(buttons: List(Int), joltage: Int)
-}
 
 fn parse_btn_p2(str: String) -> Int {
   str
@@ -135,13 +133,6 @@ fn loop_p2(
 
   // let set_next_vals = set.from_list(next_vals)
   let next_visited = set.union(visited, next_vals)
-  printf("Round ~p: ~p values to explore with ~p buttons, visited ~p\n", #(
-    rounds,
-    set.size(next_vals),
-    list.length(btns),
-    set.size(next_visited),
-  ))
-
   case set.contains(next_vals, goal) {
     True -> rounds
     False -> loop_p2(next_vals, btns, next_visited, goal, rounds + 1)
@@ -151,7 +142,7 @@ fn loop_p2(
 pub fn p2(content) -> Int {
   let assert Ok(re_machine) = regexp.from_string("\\[(.*)\\] (.*) {(.*)}")
 
-  let machines: List(Machine2) =
+  let machines: List(Machine) =
     content
     |> string.split("\n")
     |> list.map(fn(line) {
@@ -169,19 +160,8 @@ pub fn p2(content) -> Int {
 
   machines
   |> list.map(fn(machine) {
-    let res =
-      loop_p2(
-        set.from_list([0]),
-        machine.buttons,
-        set.new(),
-        machine.joltage,
-        1,
-      )
-    printf("Machine with joltage ~p solved in ~p rounds\n", #(
-      machine.joltage,
-      res,
-    ))
-    res
+    let assert Machine2(buttons, joltage) = machine
+    loop_p2(set.from_list([0]), buttons, set.new(), joltage, 1)
   })
   |> list_sum()
 }
