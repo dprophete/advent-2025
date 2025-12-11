@@ -3,6 +3,7 @@ import gleam/format.{printf}
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/set.{type Set}
 import gleam/string
 import utils.{pp_day, time_it}
 
@@ -67,30 +68,34 @@ fn loop_p2(
   graph: Graph,
   node: String,
   path: List(String),
+  path_as_set: Set(String),
   solutions: List(List(String)),
 ) -> List(List(String)) {
-  printf("exploring node ~s with path ~p\n", #(node, list.length(path)))
-  let move_on = fn(new_path) {
-    let next_nodes = graph |> dict.get(node) |> result.unwrap([])
-    next_nodes
-    |> list.flat_map(loop_p2(graph, _, new_path, solutions))
-  }
-
   case list.contains(path, node) {
     // loop
     True -> solutions
     // reaching new node
     False -> {
       let new_path = [node, ..path]
+      let new_path_as_set = set.insert(path_as_set, node)
+      // printf("exploring node ~s with path ~p\n", #(node, set.size(path_as_set)))
+      let move_on = fn() {
+        let next_nodes = graph |> dict.get(node) |> result.unwrap([])
+        next_nodes
+        |> list.flat_map(loop_p2(graph, _, new_path, new_path_as_set, solutions))
+      }
+
       case node {
         "dac" ->
-          case list.contains(path, "fft") {
-            True -> move_on(new_path)
+          case set.contains(path_as_set, "fft") {
+            True -> move_on()
             False -> solutions
           }
         // we made it
         "out" -> {
-          case list.contains(path, "fft") && list.contains(path, "dac") {
+          case
+            set.contains(path_as_set, "fft") && set.contains(path_as_set, "dac")
+          {
             True -> {
               printf("Found solution\n", [])
               [new_path, ..solutions]
@@ -99,7 +104,7 @@ fn loop_p2(
           }
         }
         // not the exit yet
-        _ -> move_on(new_path)
+        _ -> move_on()
       }
     }
   }
@@ -107,7 +112,7 @@ fn loop_p2(
 
 pub fn p2(content) -> Int {
   let graph: Graph = parse_graph(content)
-  let solutions = loop_p2(graph, "svr", [], [])
+  let solutions = loop_p2(graph, "svr", [], set.new(), [])
   list.length(solutions)
 }
 
@@ -119,6 +124,6 @@ pub fn main() {
   pp_day("Day 8: Playground")
   // assert time_it(p1, "p1", "data/11_sample.txt") == 5
   // assert time_it(p1, "p1", "data/11_input.txt") == 786
-  // assert time_it(p2, "p2", "data/11_sample2.txt") == 2
+  assert time_it(p2, "p2", "data/11_sample2.txt") == 2
   assert time_it(p2, "p2", "data/11_input.txt") == 1_351_617_690
 }

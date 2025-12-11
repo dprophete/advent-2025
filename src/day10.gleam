@@ -175,5 +175,7 @@ pub fn main() {
   assert time_it(p1, "p1", "data/10_sample.txt") == 7
   assert time_it(p1, "p1", "data/10_input.txt") == 488
   assert time_it(p2, "p2", "data/10_sample.txt") == 33
+  // this doesn't work for the input file... it takes wayyyy too long
+  // instead, use the python version which uses z3
   // assert time_it(p2, "p2", "data/10_input.txt") == 1_351_617_690
 }
