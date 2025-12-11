@@ -88,7 +88,64 @@ pub fn p1(content) -> Int {
 // --------------------------------------------------------------------------------
 
 type Machine2 {
-  Machine2(buttons: List(Int), joltage: List(Int))
+  Machine2(buttons: List(Int), joltage: Int)
+}
+
+fn parse_btn_p2(str: String) -> Int {
+  str
+  |> string.slice(1, string.length(str) - 2)
+  |> string.split(",")
+  |> list.filter_map(int.parse)
+  |> list.map(fn(nb) { int_pow(1000, nb) })
+  |> list_sum
+}
+
+fn invoke_btns_p2(val: Int, btns: List(Int)) -> List(Int) {
+  btns |> list.map(fn(btn) { val + btn })
+}
+
+fn should_keep_nb(nb, goal) -> Bool {
+  case nb == goal {
+    True -> True
+    False ->
+      case nb % 1000 >= goal % 1000 {
+        True -> False
+        False -> should_keep_nb(nb / 1000, goal / 1000)
+      }
+  }
+}
+
+fn loop_p2(
+  vals: Set(Int),
+  btns: List(Int),
+  visited: Set(Int),
+  goal: Int,
+  rounds: Int,
+) -> Int {
+  let next_vals =
+    vals
+    |> set.to_list()
+    |> list.flat_map(invoke_btns_p2(_, btns))
+    |> list.filter(should_keep_nb(_, goal))
+    |> set.from_list()
+
+  let next_vals = set.difference(next_vals, visited)
+
+  // |> list.filter(fn(nb) { !set.contains(visited, nb) })
+
+  // let set_next_vals = set.from_list(next_vals)
+  let next_visited = set.union(visited, next_vals)
+  printf("Round ~p: ~p values to explore with ~p buttons, visited ~p\n", #(
+    rounds,
+    set.size(next_vals),
+    list.length(btns),
+    set.size(next_visited),
+  ))
+
+  case set.contains(next_vals, goal) {
+    True -> rounds
+    False -> loop_p2(next_vals, btns, next_visited, goal, rounds + 1)
+  }
 }
 
 pub fn p2(content) -> Int {
@@ -100,17 +157,33 @@ pub fn p2(content) -> Int {
     |> list.map(fn(line) {
       let assert [match] = regexp.scan(re_machine, line)
       let assert [_, Some(buttons), Some(joltage)] = match.submatches
-      let joltage = joltage |> string.split(",") |> list.filter_map(int.parse)
-      let buttons = buttons |> string.split(" ") |> list.map(parse_btn_p1)
+      let joltage =
+        joltage
+        |> string.split(",")
+        |> list.filter_map(int.parse)
+        |> list.index_map(fn(nb, idx) { nb * int_pow(1000, idx) })
+        |> list_sum
+      let buttons = buttons |> string.split(" ") |> list.map(parse_btn_p2)
       Machine2(buttons, joltage)
     })
 
-  // machines
-  // |> list.map(fn(machine) {
-  //   loop_p1([machine.lights], machine.buttons, set.new(), 1)
-  // })
-  // |> list_sum()
-  10
+  machines
+  |> list.map(fn(machine) {
+    let res =
+      loop_p2(
+        set.from_list([0]),
+        machine.buttons,
+        set.new(),
+        machine.joltage,
+        1,
+      )
+    printf("Machine with joltage ~p solved in ~p rounds\n", #(
+      machine.joltage,
+      res,
+    ))
+    res
+  })
+  |> list_sum()
 }
 
 // --------------------------------------------------------------------------------
@@ -121,6 +194,6 @@ pub fn main() {
   pp_day("Day 8: Playground")
   assert time_it(p1, "p1", "data/10_sample.txt") == 7
   assert time_it(p1, "p1", "data/10_input.txt") == 488
-  // assert time_it(p2, "p2", "data/10_sample.txt") == 33
+  assert time_it(p2, "p2", "data/10_sample.txt") == 33
   // assert time_it(p2, "p2", "data/10_input.txt") == 1_351_617_690
 }
