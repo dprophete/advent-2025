@@ -13,7 +13,7 @@ type Graph =
 // p1
 // --------------------------------------------------------------------------------
 
-fn loop(
+fn loop_p1(
   graph: Graph,
   node: String,
   path: List(String),
@@ -32,7 +32,7 @@ fn loop(
         False -> {
           let next_nodes = graph |> dict.get(node) |> result.unwrap([])
           next_nodes
-          |> list.flat_map(loop(graph, _, path, solutions))
+          |> list.flat_map(loop_p1(graph, _, path, solutions))
         }
       }
     }
@@ -53,7 +53,7 @@ pub fn p1(content) -> Int {
       })
     })
 
-  let solutions = loop(graph, "you", [], [])
+  let solutions = loop_p1(graph, "you", [], [])
   list.length(solutions)
 }
 
