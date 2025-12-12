@@ -28,31 +28,21 @@ fn parse_graph(content: String) -> Graph {
 // p1
 // --------------------------------------------------------------------------------
 
-fn loop_p1(graph: Graph, node: String, path: List(String)) -> Int {
-  case list.contains(path, node) {
-    // loop
-    True -> 0
-    // reaching new node
+fn loop_p1(graph: Graph, node: String) -> Int {
+  case node == "out" {
+    // we made it
+    True -> 1
+    // not the exit yet
     False -> {
-      let path = [node, ..path]
-      case node == "out" {
-        // we made it
-        True -> 1
-        // not the exit yet
-        False -> {
-          let next_nodes = graph |> dict.get(node) |> result.unwrap([])
-          next_nodes
-          |> list.map(loop_p1(graph, _, path))
-          |> list_sum()
-        }
-      }
+      let next_nodes = graph |> dict.get(node) |> result.unwrap([])
+      next_nodes |> list.map(loop_p1(graph, _)) |> list_sum()
     }
   }
 }
 
 pub fn p1(content) -> Int {
   let graph: Graph = parse_graph(content)
-  loop_p1(graph, "you", [])
+  loop_p1(graph, "you")
 }
 
 // --------------------------------------------------------------------------------
@@ -69,10 +59,7 @@ fn loop_p2(graph: Graph, node: String, dst: String) -> Int {
         // not the exit yet
         _ -> {
           let next_nodes = graph |> dict.get(node) |> result.unwrap([])
-          let res =
-            next_nodes
-            |> list.map(loop_p2(graph, _, dst))
-            |> list_sum()
+          let res = next_nodes |> list.map(loop_p2(graph, _, dst)) |> list_sum()
           cache.put(node, res)
           res
         }
