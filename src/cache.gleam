@@ -59,15 +59,15 @@ pub fn put(key: a, val: b) -> Bool {
   ets_insert(cache, tuple)
 }
 
-pub fn get(key: a) -> Option(b) {
+pub fn get(key: a) -> Result(b, Nil) {
   let cache = cache_atom()
   let result = ets_lookup(cache, to_dynamic(key))
 
   case result {
     [first, ..] -> {
       let tuple: #(a, b) = from_dynamic(first)
-      Some(tuple.1)
+      Ok(tuple.1)
     }
-    _ -> None
+    _ -> Error(Nil)
   }
 }
