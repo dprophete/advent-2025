@@ -1,6 +1,5 @@
 import gleam/dynamic.{type Dynamic}
 import gleam/erlang/atom.{type Atom}
-import gleam/option.{type Option, None, Some}
 
 pub opaque type TableRef {
   TableRef(Dynamic)
