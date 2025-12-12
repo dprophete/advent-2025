@@ -1,11 +1,12 @@
+// import gleam/format.{printf}
+import cache
 import gleam/dict.{type Dict}
-import gleam/format.{printf}
 import gleam/list
 import gleam/option
 import gleam/result
 import gleam/set.{type Set}
 import gleam/string
-import utils.{pp_day, time_it}
+import utils.{list_sum, pp_day, time_it}
 
 type Graph =
   Dict(String, List(String))
@@ -28,26 +29,22 @@ fn parse_graph(content: String) -> Graph {
 // p1
 // --------------------------------------------------------------------------------
 
-fn loop_p1(
-  graph: Graph,
-  node: String,
-  path: List(String),
-  solutions: List(List(String)),
-) -> List(List(String)) {
+fn loop_p1(graph: Graph, node: String, path: List(String)) -> Int {
   case list.contains(path, node) {
     // loop
-    True -> solutions
+    True -> 0
     // reaching new node
     False -> {
       let path = [node, ..path]
       case node == "out" {
         // we made it
-        True -> [path, ..solutions]
+        True -> 1
         // not the exit yet
         False -> {
           let next_nodes = graph |> dict.get(node) |> result.unwrap([])
           next_nodes
-          |> list.flat_map(loop_p1(graph, _, path, solutions))
+          |> list.map(loop_p1(graph, _, path))
+          |> list_sum()
         }
       }
     }
@@ -56,8 +53,7 @@ fn loop_p1(
 
 pub fn p1(content) -> Int {
   let graph: Graph = parse_graph(content)
-  let solutions = loop_p1(graph, "you", [], [])
-  list.length(solutions)
+  loop_p1(graph, "you", [])
 }
 
 // --------------------------------------------------------------------------------
@@ -69,42 +65,35 @@ fn loop_p2(
   node: String,
   path: List(String),
   path_as_set: Set(String),
-  solutions: List(List(String)),
-) -> List(List(String)) {
+  dst: String,
+) -> Int {
   case list.contains(path, node) {
     // loop
-    True -> solutions
+    True -> 0
     // reaching new node
     False -> {
-      let new_path = [node, ..path]
-      let new_path_as_set = set.insert(path_as_set, node)
-      // printf("exploring node ~s with path ~p\n", #(node, set.size(path_as_set)))
-      let move_on = fn() {
-        let next_nodes = graph |> dict.get(node) |> result.unwrap([])
-        next_nodes
-        |> list.flat_map(loop_p2(graph, _, new_path, new_path_as_set, solutions))
-      }
-
-      case node {
-        "dac" ->
-          case set.contains(path_as_set, "fft") {
-            True -> move_on()
-            False -> solutions
+      case cache.get(node) {
+        Ok(nb_paths) -> nb_paths
+        Error(_) -> {
+          let new_path = [node, ..path]
+          let new_path_as_set = set.insert(path_as_set, node)
+          let move_on = fn() {
+            let next_nodes = graph |> dict.get(node) |> result.unwrap([])
+            let res =
+              next_nodes
+              |> list.map(loop_p2(graph, _, new_path, new_path_as_set, dst))
+              |> list_sum()
+            cache.put(node, res)
+            res
           }
-        // we made it
-        "out" -> {
-          case
-            set.contains(path_as_set, "fft") && set.contains(path_as_set, "dac")
-          {
-            True -> {
-              printf("Found solution\n", [])
-              [new_path, ..solutions]
-            }
-            False -> solutions
+
+          case node == dst {
+            // we made it
+            True -> 1
+            // not the exit yet
+            _ -> move_on()
           }
         }
-        // not the exit yet
-        _ -> move_on()
       }
     }
   }
@@ -112,8 +101,13 @@ fn loop_p2(
 
 pub fn p2(content) -> Int {
   let graph: Graph = parse_graph(content)
-  let solutions = loop_p2(graph, "svr", [], set.new(), [])
-  list.length(solutions)
+  cache.setup()
+  let svr_to_fft = loop_p2(graph, "svr", [], set.new(), "fft")
+  cache.setup()
+  let fft_to_dac = loop_p2(graph, "fft", [], set.new(), "dac")
+  cache.setup()
+  let dac_to_out = loop_p2(graph, "dac", [], set.new(), "out")
+  svr_to_fft * fft_to_dac * dac_to_out
 }
 
 // --------------------------------------------------------------------------------
@@ -122,8 +116,8 @@ pub fn p2(content) -> Int {
 
 pub fn main() {
   pp_day("Day 8: Playground")
-  // assert time_it(p1, "p1", "data/11_sample.txt") == 5
-  // assert time_it(p1, "p1", "data/11_input.txt") == 786
+  assert time_it(p1, "p1", "data/11_sample.txt") == 5
+  assert time_it(p1, "p1", "data/11_input.txt") == 786
   assert time_it(p2, "p2", "data/11_sample2.txt") == 2
-  assert time_it(p2, "p2", "data/11_input.txt") == 1_351_617_690
+  assert time_it(p2, "p2", "data/11_input.txt") == 495_845_045_016_588
 }
