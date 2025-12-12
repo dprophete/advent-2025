@@ -41,14 +41,13 @@ pub fn setup() -> TableRef {
   // Check if table exists and delete it
   let info = ets_info(cache)
   case dynamic.classify(info) {
-    "Atom" -> {
+    "Nil" -> Nil
+    _ -> {
       ets_delete(cache)
       Nil
     }
-    _ -> Nil
   }
 
-  // Create new table
   let table_ref = ets_new(cache, [named_table_atom()])
   TableRef(table_ref)
 }
