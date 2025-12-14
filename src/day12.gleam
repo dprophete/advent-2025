@@ -194,7 +194,10 @@ fn loop1(
   use <- bool.lazy_guard(
     when: remaining_size >= list.length(shape_ids) * 9,
     return: fn() {
-      printf("More than enough space", [])
+      printf("More than enough space: ~p > ~p\n", [
+        remaining_size,
+        list.length(shape_ids) * 9,
+      ])
       Ok(m)
     },
   )
@@ -242,7 +245,7 @@ fn can_fit(
   case loop1(m0, transforms, shape_sizes, shape_ids) {
     Ok(final_m) -> {
       printf("~p: Fit found\n", [idx])
-      printf("Final:\n~s\n", [pp_matrix(final_m)])
+      // printf("Final:\n~s\n", [pp_matrix(final_m)])
       True
     }
     Error(_) -> {
