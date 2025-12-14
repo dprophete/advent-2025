@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/format.{printf}
 import gleam/function
@@ -196,24 +197,16 @@ fn loop1(
     // we have more pieces to place
     Ok(#(shape_id, new_quantities)) -> {
       let assert Ok(shapes) = dict.get(transforms, shape_id)
-
+      use shape <- do_until(shapes)
       use x <- do_until(list.range(0, m.width - 3))
       use y <- do_until(list.range(0, m.height - 3))
-      let pt = #(x, y)
-      let pt_to_test = if_then_else(shape_id == 4, #(x, y), #(x + 1, y + 1))
-      case set.contains(m.pts, pt_to_test) {
-        True -> Error(Nil)
-        False -> {
-          use shape <- do_until(shapes)
-          let txed_shape = tx_shape(shape, pt)
-          case will_fit(m, txed_shape) {
-            True -> {
-              let m1 = add_shape(m, txed_shape)
-              loop1(m1, transforms, new_quantities)
-            }
-            False -> Error(Nil)
-          }
+      let txed_shape = tx_shape(shape, #(x, y))
+      case will_fit(m, txed_shape) {
+        True -> {
+          let m1 = add_shape(m, txed_shape)
+          loop1(m1, transforms, new_quantities)
         }
+        False -> Error(Nil)
       }
     }
   }
@@ -244,8 +237,8 @@ pub fn p1(content) -> Int {
     shapes |> dict.map_values(fn(_, shape) { all_transforms(shape) })
 
   let assert [r0, r1, r2] = model.regions
-  // can_fit(0, r0, transforms)
-  // can_fit(1, r1, transforms)
+  can_fit(0, r0, transforms)
+  can_fit(1, r1, transforms)
   can_fit(2, r2, transforms)
   // model.regions
   // |> list.index_map(pair.new)
