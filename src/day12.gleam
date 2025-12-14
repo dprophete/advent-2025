@@ -146,23 +146,6 @@ fn will_fit(m: LightMatrix, shape: Shape) -> Bool {
   set.is_disjoint(shape, m.pts)
 }
 
-// fn get_nx_piece(
-//   quantities: Dict(Int, Int),
-// ) -> Result(#(Int, Dict(Int, Int)), Nil) {
-//   case dict.is_empty(quantities) {
-//     True -> Error(Nil)
-//     False -> {
-//       let assert [#(shape_id, qty), ..] = dict.to_list(quantities)
-//       let new_quantities = case { qty == 1 } {
-//         True -> dict.delete(quantities, shape_id)
-//         False -> dict.insert(quantities, shape_id, qty - 1)
-//       }
-//
-//       Ok(#(shape_id, new_quantities))
-//     }
-//   }
-// }
-
 // --------------------------------------------------------------------------------
 // p1
 // --------------------------------------------------------------------------------
@@ -184,44 +167,18 @@ pub fn do_until(
 fn loop1(
   m: LightMatrix,
   transforms: Dict(Int, List(Shape)),
-  shape_sizes: Dict(Int, Int),
   shape_ids: List(Int),
 ) -> Result(LightMatrix, Nil) {
   use <- bool.guard(when: shape_ids == [], return: Ok(m))
-  let remaining_size = m.width * m.height - set.size(m.pts)
-
-  // this is cheating !!!
-  use <- bool.lazy_guard(
-    when: remaining_size >= list.length(shape_ids) * 9,
-    return: fn() {
-      printf("More than enough space: ~p > ~p\n", [
-        remaining_size,
-        list.length(shape_ids) * 9,
-      ])
-      Ok(m)
-    },
-  )
-
-  let remaining_pts =
-    shape_ids |> list.filter_map(dict.get(shape_sizes, _)) |> list_sum
-
-  use <- bool.lazy_guard(when: remaining_size < remaining_pts, return: fn() {
-    printf("Not enough space: ~p < ~p\n", [remaining_size, remaining_pts])
-    Error(Nil)
-  })
 
   let assert [shape_id, ..rest] = shape_ids
   let assert Ok(shapes) = dict.get(transforms, shape_id)
   use shape <- do_until(shapes)
   use x <- do_until(list.range(0, m.width - 3))
   use y <- do_until(list.range(0, m.height - 3))
-  // printf("trying to place piece ~p at (~p, ~p)\n", [shape_id, x, y])
   let txed_shape = tx_shape(shape, #(x, y))
   case will_fit(m, txed_shape) {
-    True -> {
-      let m1 = add_shape(m, txed_shape)
-      loop1(m1, transforms, shape_sizes, rest)
-    }
+    True -> loop1(add_shape(m, txed_shape), transforms, rest)
     False -> Error(Nil)
   }
 }
@@ -242,10 +199,31 @@ fn can_fit(
       list.append(acc, list.repeat(qty, shape_id))
     })
 
-  case loop1(m0, transforms, shape_sizes, shape_ids) {
+  let total_shape_sizes =
+    shape_ids |> list.filter_map(dict.get(shape_sizes, _)) |> list_sum
+
+  // do we have way too may presnets to fit?
+  use <- bool.lazy_guard(
+    when: total_shape_sizes > m0.width * m0.height,
+    return: fn() {
+      printf("~p: it will never fit - don't even try\n", [idx])
+      False
+    },
+  )
+
+  // is the space big enough to hold all presents in their own 3x3 box?
+  let all_3by_3_boxes = { m0.width / 3 } * { m0.height / 3 }
+  use <- bool.lazy_guard(
+    when: all_3by_3_boxes >= shape_ids |> list.length(),
+    return: fn() {
+      printf("~p: we have sooooooo much space\n", [idx])
+      True
+    },
+  )
+
+  case loop1(m0, transforms, shape_ids) {
     Ok(final_m) -> {
       printf("~p: Fit found\n", [idx])
-      // printf("Final:\n~s\n", [pp_matrix(final_m)])
       True
     }
     Error(_) -> {
@@ -270,17 +248,12 @@ pub fn p1(content) -> Int {
 }
 
 // --------------------------------------------------------------------------------
-// p2
-// --------------------------------------------------------------------------------
-
-// --------------------------------------------------------------------------------
 // main
 // --------------------------------------------------------------------------------
 
 pub fn main() {
   pp_day("Day 12: Christmas Tree Farm")
+  // oh great, it takes forever with the sample data but completes in no time with the input data...
   // assert time_it(p1, "p1", "data/12_sample.txt") == 2
   assert time_it(p1, "p1", "data/12_input.txt") == 448
-  // assert time_it(p2, "p2", "data/12_sample2.txt") == 2
-  // assert time_it(p2, "p2", "data/12_input.txt") == 495_845_045_016_588
 }
