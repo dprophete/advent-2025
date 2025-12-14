@@ -4,10 +4,11 @@ import gleam/format.{printf}
 import gleam/function
 import gleam/int
 import gleam/list
+import gleam/pair
 import gleam/set.{type Set}
 import gleam/string
 
-import utils.{arr_to_pair, if_then_else, pp_day, time_it}
+import utils.{arr_to_pair, if_then_else, list_sum, pp_day, time_it}
 import v2.{type V2}
 
 type LightMatrix {
@@ -15,7 +16,7 @@ type LightMatrix {
 }
 
 type Region {
-  Region(size: V2, quantities: Dict(Int, Int))
+  Region(size: V2, quantities: List(Int))
 }
 
 type Model {
@@ -29,11 +30,6 @@ fn parse_region(region: String) -> Region {
 
   let quantities: List(Int) =
     quantities |> string.split(" ") |> list.filter_map(int.parse)
-  let quantities: Dict(Int, Int) =
-    quantities
-    |> list.index_map(fn(qty, idx) { #(idx, qty) })
-    |> list.filter(fn(el) { el.1 > 0 })
-    |> dict.from_list()
   Region(size, quantities)
 }
 
@@ -150,22 +146,22 @@ fn will_fit(m: LightMatrix, shape: Shape) -> Bool {
   set.is_disjoint(shape, m.pts)
 }
 
-fn get_nx_piece(
-  quantities: Dict(Int, Int),
-) -> Result(#(Int, Dict(Int, Int)), Nil) {
-  case dict.is_empty(quantities) {
-    True -> Error(Nil)
-    False -> {
-      let assert [#(shape_id, qty), ..] = dict.to_list(quantities)
-      let new_quantities = case { qty == 1 } {
-        True -> dict.delete(quantities, shape_id)
-        False -> dict.insert(quantities, shape_id, qty - 1)
-      }
-
-      Ok(#(shape_id, new_quantities))
-    }
-  }
-}
+// fn get_nx_piece(
+//   quantities: Dict(Int, Int),
+// ) -> Result(#(Int, Dict(Int, Int)), Nil) {
+//   case dict.is_empty(quantities) {
+//     True -> Error(Nil)
+//     False -> {
+//       let assert [#(shape_id, qty), ..] = dict.to_list(quantities)
+//       let new_quantities = case { qty == 1 } {
+//         True -> dict.delete(quantities, shape_id)
+//         False -> dict.insert(quantities, shape_id, qty - 1)
+//       }
+//
+//       Ok(#(shape_id, new_quantities))
+//     }
+//   }
+// }
 
 // --------------------------------------------------------------------------------
 // p1
@@ -188,35 +184,62 @@ pub fn do_until(
 fn loop1(
   m: LightMatrix,
   transforms: Dict(Int, List(Shape)),
-  quantities: Dict(Int, Int),
+  shape_sizes: Dict(Int, Int),
+  shape_ids: List(Int),
 ) -> Result(LightMatrix, Nil) {
-  case get_nx_piece(quantities) {
-    // that as the last piece
-    Error(_) -> Ok(m)
+  use <- bool.guard(when: shape_ids == [], return: Ok(m))
+  let remaining_size = m.width * m.height - set.size(m.pts)
 
-    // we have more pieces to place
-    Ok(#(shape_id, new_quantities)) -> {
-      let assert Ok(shapes) = dict.get(transforms, shape_id)
-      use shape <- do_until(shapes)
-      use x <- do_until(list.range(0, m.width - 3))
-      use y <- do_until(list.range(0, m.height - 3))
-      let txed_shape = tx_shape(shape, #(x, y))
-      case will_fit(m, txed_shape) {
-        True -> {
-          let m1 = add_shape(m, txed_shape)
-          loop1(m1, transforms, new_quantities)
-        }
-        False -> Error(Nil)
-      }
+  // this is cheating !!!
+  use <- bool.lazy_guard(
+    when: remaining_size >= list.length(shape_ids) * 9,
+    return: fn() {
+      printf("More than enough space", [])
+      Ok(m)
+    },
+  )
+
+  let remaining_pts =
+    shape_ids |> list.filter_map(dict.get(shape_sizes, _)) |> list_sum
+
+  use <- bool.lazy_guard(when: remaining_size < remaining_pts, return: fn() {
+    printf("Not enough space: ~p < ~p\n", [remaining_size, remaining_pts])
+    Error(Nil)
+  })
+
+  let assert [shape_id, ..rest] = shape_ids
+  let assert Ok(shapes) = dict.get(transforms, shape_id)
+  use shape <- do_until(shapes)
+  use x <- do_until(list.range(0, m.width - 3))
+  use y <- do_until(list.range(0, m.height - 3))
+  // printf("trying to place piece ~p at (~p, ~p)\n", [shape_id, x, y])
+  let txed_shape = tx_shape(shape, #(x, y))
+  case will_fit(m, txed_shape) {
+    True -> {
+      let m1 = add_shape(m, txed_shape)
+      loop1(m1, transforms, shape_sizes, rest)
     }
+    False -> Error(Nil)
   }
 }
 
-fn can_fit(idx: Int, region: Region, transforms: Dict(Int, List(Shape))) -> Bool {
+fn can_fit(
+  idx: Int,
+  region: Region,
+  transforms: Dict(Int, List(Shape)),
+  shape_sizes: Dict(Int, Int),
+) -> Bool {
   let m0 = LightMatrix(set.new(), region.size.0, region.size.1)
   let quantities = region.quantities
+  let shape_ids =
+    quantities
+    |> list.index_map(pair.new)
+    |> list.fold([], fn(acc, el) {
+      let #(shape_id, qty) = el
+      list.append(acc, list.repeat(qty, shape_id))
+    })
 
-  case loop1(m0, transforms, quantities) {
+  case loop1(m0, transforms, shape_sizes, shape_ids) {
     Ok(final_m) -> {
       printf("~p: Fit found\n", [idx])
       printf("Final:\n~s\n", [pp_matrix(final_m)])
@@ -235,15 +258,12 @@ pub fn p1(content) -> Int {
   // dict: shape_id -> list of all transforms for this shape
   let transforms: Dict(Int, List(Shape)) =
     shapes |> dict.map_values(fn(_, shape) { all_transforms(shape) })
+  let shape_sizes: Dict(Int, Int) =
+    shapes |> dict.map_values(fn(_, shape) { set.size(shape) })
 
-  let assert [r0, r1, r2] = model.regions
-  can_fit(0, r0, transforms)
-  can_fit(1, r1, transforms)
-  can_fit(2, r2, transforms)
-  // model.regions
-  // |> list.index_map(pair.new)
-  // |> list.count(fn(el) { can_fit(el.1, el.0, shapes) })
-  2
+  model.regions
+  |> list.index_map(pair.new)
+  |> list.count(fn(el) { can_fit(el.1, el.0, transforms, shape_sizes) })
 }
 
 // --------------------------------------------------------------------------------
@@ -256,8 +276,8 @@ pub fn p1(content) -> Int {
 
 pub fn main() {
   pp_day("Day 12: Christmas Tree Farm")
-  assert time_it(p1, "p1", "data/12_sample.txt") == 2
-  // assert time_it(p1, "p1", "data/12_input.txt") == 786
+  // assert time_it(p1, "p1", "data/12_sample.txt") == 2
+  assert time_it(p1, "p1", "data/12_input.txt") == 448
   // assert time_it(p2, "p2", "data/12_sample2.txt") == 2
   // assert time_it(p2, "p2", "data/12_input.txt") == 495_845_045_016_588
 }
