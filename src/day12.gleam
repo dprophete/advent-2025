@@ -3,15 +3,15 @@ import gleam/format.{printf}
 import gleam/function
 import gleam/int
 import gleam/list
+import gleam/set.{type Set}
 import gleam/string
-import matrix.{type Matrix}
+
 import utils.{arr_to_pair, if_then_else, pp_day, time_it}
 import v2.{type V2}
 
-// type Cell {
-//   Empty
-//   Occupied
-// }
+type LightMatrix {
+  LightMatrix(pts: Set(V2), width: Int, height: Int)
+}
 
 type Region {
   Region(size: V2, quantities: Dict(Int, Int))
@@ -20,13 +20,6 @@ type Region {
 type Model {
   Model(shapes: Dict(Int, Shape), regions: List(Region))
 }
-
-// fn parse_cell(str: String) -> Cell {
-//   case str == "#" {
-//     True -> Occupied
-//     False -> Empty
-//   }
-// }
 
 fn parse_region(region: String) -> Region {
   let assert [size, quantities] = region |> string.split(": ")
@@ -63,7 +56,7 @@ fn parse(content: String) -> Model {
 // --------------------------------------------------------------------------------
 
 type Shape =
-  List(V2)
+  Set(V2)
 
 fn parse_shape(shape: String) -> Shape {
   let assert [_, ..lines] = shape |> string.split("\n")
@@ -77,22 +70,23 @@ fn parse_shape(shape: String) -> Shape {
     |> list.filter_map(function.identity)
   })
   |> list.flatten()
+  |> set.from_list()
 }
 
 fn rotate_left(shape: Shape) -> Shape {
-  shape |> list.map(fn(pt) { #(pt.1, 2 - pt.0) })
+  shape |> set.map(fn(pt) { #(pt.1, 2 - pt.0) })
 }
 
 fn rot_right(shape: Shape) -> Shape {
-  shape |> list.map(fn(pt) { #(2 - pt.1, pt.0) })
+  shape |> set.map(fn(pt) { #(2 - pt.1, pt.0) })
 }
 
 fn flip_hori(shape: Shape) -> Shape {
-  shape |> list.map(fn(pt) { #(2 - pt.0, pt.1) })
+  shape |> set.map(fn(pt) { #(2 - pt.0, pt.1) })
 }
 
 fn flip_vert(shape: Shape) -> Shape {
-  shape |> list.map(fn(pt) { #(pt.0, 2 - pt.1) })
+  shape |> set.map(fn(pt) { #(pt.0, 2 - pt.1) })
 }
 
 fn all_transforms(shape: Shape) -> List(Shape) {
@@ -113,7 +107,7 @@ fn all_transforms(shape: Shape) -> List(Shape) {
 }
 
 fn tx_shape(shape: Shape, tx: V2) -> Shape {
-  shape |> list.map(fn(pt) { #(pt.0 + tx.0, pt.1 + tx.1) })
+  shape |> set.map(fn(pt) { #(pt.0 + tx.0, pt.1 + tx.1) })
 }
 
 fn pp_shape(shape: Shape) {
@@ -121,8 +115,8 @@ fn pp_shape(shape: Shape) {
   |> list.map(fn(y) {
     list.range(0, 2)
     |> list.map(fn(x) {
-      case list.find(shape, fn(pt) { pt == #(x, y) }) {
-        Ok(_) -> "#"
+      case set.contains(shape, #(x, y)) {
+        True -> "#"
         _ -> "."
       }
     })
@@ -131,57 +125,28 @@ fn pp_shape(shape: Shape) {
   |> string.join("\n")
 }
 
-fn add_shape_at(m: Matrix(String), shape: Shape) -> Matrix(String) {
-  shape
-  |> list.map(fn(pt) { #(pt, "#") })
-  |> matrix.set_all(m, _)
+fn pp_matrix(m: LightMatrix) {
+  list.range(0, m.height - 1)
+  |> list.map(fn(y) {
+    list.range(0, m.width - 1)
+    |> list.map(fn(x) {
+      case set.contains(m.pts, #(x, y)) {
+        True -> "#"
+        _ -> "."
+      }
+    })
+    |> string.join("")
+  })
+  |> string.join("\n")
 }
 
-// try all the shape transforms to see if it will fit in the matrix
-// fn will_fit_with_transforms_and_txs(
-//   m: Matrix(String),
-//   shape: Shape,
-// ) -> Result(Shape, Nil) {
-//   all_transforms(shape)
-//   |> list.fold_until(Error(Nil), fn(acc, transformed) {
-//     case will_fit_with_txs(m, transformed) {
-//       Ok(tx) -> Stop(Ok(tx_shape(transformed, tx)))
-//       Error(_) -> Continue(acc)
-//     }
-//   })
-// }
-//
-// fn will_fit_with_txs(m: Matrix(String), shape: Shape) -> Result(V2, Nil) {
-//   list.range(0, m.width - 3)
-//   |> list.fold_until(Error(Nil), fn(acc, x) {
-//     case
-//       list.range(0, m.height - 3)
-//       |> list.find(fn(y) { will_fit(m, tx_shape(shape, #(x, y))) })
-//     {
-//       Ok(y) -> Stop(Ok(#(x, y)))
-//       Error(_) -> Continue(acc)
-//     }
-//   })
-// }
-//
-// fn will_fit_with_transforms(
-//   m: Matrix(String),
-//   shape: Shape,
-// ) -> Result(Shape, Nil) {
-//   shape
-//   |> all_transforms()
-//   |> list.find(fn(transformed) { will_fit(m, transformed) })
-// }
+fn add_shape(m: LightMatrix, shape: Shape) -> LightMatrix {
+  LightMatrix(set.union(m.pts, shape), m.width, m.height)
+}
 
 // see if shape fits in the matrix
-fn will_fit(m: Matrix(String), shape: Shape) -> Bool {
-  shape
-  |> list.all(fn(pt) {
-    case matrix.get(m, pt) {
-      Ok(cell) -> cell == "."
-      _ -> False
-    }
-  })
+fn will_fit(m: LightMatrix, shape: Shape) -> Bool {
+  set.is_disjoint(shape, m.pts)
 }
 
 fn get_nx_piece(
@@ -220,10 +185,10 @@ pub fn do_until(
 }
 
 fn loop1(
-  m: Matrix(String),
+  m: LightMatrix,
   transforms: Dict(Int, List(Shape)),
   quantities: Dict(Int, Int),
-) -> Result(Matrix(String), Nil) {
+) -> Result(LightMatrix, Nil) {
   case get_nx_piece(quantities) {
     // that as the last piece
     Error(_) -> Ok(m)
@@ -231,31 +196,37 @@ fn loop1(
     // we have more pieces to place
     Ok(#(shape_id, new_quantities)) -> {
       let assert Ok(shapes) = dict.get(transforms, shape_id)
-      // printf("Trying to fit shape\n~s\n", [pp_shape(shape)])
 
       use x <- do_until(list.range(0, m.width - 3))
       use y <- do_until(list.range(0, m.height - 3))
-      use transformed <- do_until(shapes)
-      let txed_shape = tx_shape(transformed, #(x, y))
-      case will_fit(m, txed_shape) {
-        True -> {
-          let m1 = add_shape_at(m, txed_shape)
-          loop1(m1, transforms, new_quantities)
+      let pt = #(x, y)
+      let pt_to_test = if_then_else(shape_id == 4, #(x, y), #(x + 1, y + 1))
+      case set.contains(m.pts, pt_to_test) {
+        True -> Error(Nil)
+        False -> {
+          use shape <- do_until(shapes)
+          let txed_shape = tx_shape(shape, pt)
+          case will_fit(m, txed_shape) {
+            True -> {
+              let m1 = add_shape(m, txed_shape)
+              loop1(m1, transforms, new_quantities)
+            }
+            False -> Error(Nil)
+          }
         }
-        False -> Error(Nil)
       }
     }
   }
 }
 
 fn can_fit(idx: Int, region: Region, transforms: Dict(Int, List(Shape))) -> Bool {
-  let m0 = matrix.with_size(matrix.AsDict, region.size.0, region.size.1, ".")
+  let m0 = LightMatrix(set.new(), region.size.0, region.size.1)
   let quantities = region.quantities
 
   case loop1(m0, transforms, quantities) {
     Ok(final_m) -> {
       printf("~p: Fit found\n", [idx])
-      printf("Final:\n~s\n", [matrix.pp(final_m, function.identity)])
+      printf("Final:\n~s\n", [pp_matrix(final_m)])
       True
     }
     Error(_) -> {
@@ -268,13 +239,14 @@ fn can_fit(idx: Int, region: Region, transforms: Dict(Int, List(Shape))) -> Bool
 pub fn p1(content) -> Int {
   let model = parse(content)
   let shapes = model.shapes
+  // dict: shape_id -> list of all transforms for this shape
   let transforms: Dict(Int, List(Shape)) =
     shapes |> dict.map_values(fn(_, shape) { all_transforms(shape) })
 
   let assert [r0, r1, r2] = model.regions
-  can_fit(0, r0, transforms)
-  can_fit(1, r1, transforms)
-  // can_fit(2, r2, transforms)
+  // can_fit(0, r0, transforms)
+  // can_fit(1, r1, transforms)
+  can_fit(2, r2, transforms)
   // model.regions
   // |> list.index_map(pair.new)
   // |> list.count(fn(el) { can_fit(el.1, el.0, shapes) })
