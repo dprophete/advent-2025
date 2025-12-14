@@ -2,8 +2,7 @@ import gleam/dict.{type Dict}
 import gleam/format.{printf}
 import gleam/function
 import gleam/int
-import gleam/list.{Continue, Stop}
-import gleam/pair
+import gleam/list
 import gleam/string
 import matrix.{type Matrix}
 import utils.{arr_to_pair, if_then_else, pp_day, time_it}
@@ -139,40 +138,40 @@ fn add_shape_at(m: Matrix(String), shape: Shape) -> Matrix(String) {
 }
 
 // try all the shape transforms to see if it will fit in the matrix
-fn will_fit_with_transforms_and_txs(
-  m: Matrix(String),
-  shape: Shape,
-) -> Result(Shape, Nil) {
-  all_transforms(shape)
-  |> list.fold_until(Error(Nil), fn(acc, transformed) {
-    case will_fit_with_txs(m, transformed) {
-      Ok(tx) -> Stop(Ok(tx_shape(transformed, tx)))
-      Error(_) -> Continue(acc)
-    }
-  })
-}
-
-fn will_fit_with_txs(m: Matrix(String), shape: Shape) -> Result(V2, Nil) {
-  list.range(0, m.width - 3)
-  |> list.fold_until(Error(Nil), fn(acc, x) {
-    case
-      list.range(0, m.height - 3)
-      |> list.find(fn(y) { will_fit(m, tx_shape(shape, #(x, y))) })
-    {
-      Ok(y) -> Stop(Ok(#(x, y)))
-      Error(_) -> Continue(acc)
-    }
-  })
-}
-
-fn will_fit_with_transforms(
-  m: Matrix(String),
-  shape: Shape,
-) -> Result(Shape, Nil) {
-  shape
-  |> all_transforms()
-  |> list.find(fn(transformed) { will_fit(m, transformed) })
-}
+// fn will_fit_with_transforms_and_txs(
+//   m: Matrix(String),
+//   shape: Shape,
+// ) -> Result(Shape, Nil) {
+//   all_transforms(shape)
+//   |> list.fold_until(Error(Nil), fn(acc, transformed) {
+//     case will_fit_with_txs(m, transformed) {
+//       Ok(tx) -> Stop(Ok(tx_shape(transformed, tx)))
+//       Error(_) -> Continue(acc)
+//     }
+//   })
+// }
+//
+// fn will_fit_with_txs(m: Matrix(String), shape: Shape) -> Result(V2, Nil) {
+//   list.range(0, m.width - 3)
+//   |> list.fold_until(Error(Nil), fn(acc, x) {
+//     case
+//       list.range(0, m.height - 3)
+//       |> list.find(fn(y) { will_fit(m, tx_shape(shape, #(x, y))) })
+//     {
+//       Ok(y) -> Stop(Ok(#(x, y)))
+//       Error(_) -> Continue(acc)
+//     }
+//   })
+// }
+//
+// fn will_fit_with_transforms(
+//   m: Matrix(String),
+//   shape: Shape,
+// ) -> Result(Shape, Nil) {
+//   shape
+//   |> all_transforms()
+//   |> list.find(fn(transformed) { will_fit(m, transformed) })
+// }
 
 // see if shape fits in the matrix
 fn will_fit(m: Matrix(String), shape: Shape) -> Bool {
@@ -206,38 +205,57 @@ fn get_nx_piece(
 // p1
 // --------------------------------------------------------------------------------
 
+pub fn do_until(
+  over list: List(a),
+  with fun: fn(a) -> Result(b, Nil),
+) -> Result(b, Nil) {
+  case list {
+    [] -> Error(Nil)
+    [first, ..rest] ->
+      case fun(first) {
+        Ok(res) -> Ok(res)
+        _ -> do_until(rest, fun)
+      }
+  }
+}
+
 fn loop1(
   m: Matrix(String),
-  shapes: Dict(Int, Shape),
+  transforms: Dict(Int, List(Shape)),
   quantities: Dict(Int, Int),
 ) -> Result(Matrix(String), Nil) {
   case get_nx_piece(quantities) {
     // that as the last piece
     Error(_) -> Ok(m)
 
+    // we have more pieces to place
     Ok(#(shape_id, new_quantities)) -> {
-      let assert Ok(shape) = dict.get(shapes, shape_id)
-      printf("Trying to fit shape\n~s\n", [pp_shape(shape)])
-      case will_fit_with_transforms_and_txs(m, shape) {
-        Error(_) -> Error(Nil)
+      let assert Ok(shapes) = dict.get(transforms, shape_id)
+      // printf("Trying to fit shape\n~s\n", [pp_shape(shape)])
 
-        Ok(fit_shape) -> {
-          let m1 = add_shape_at(m, fit_shape)
-          loop1(m1, shapes, new_quantities)
+      use x <- do_until(list.range(0, m.width - 3))
+      use y <- do_until(list.range(0, m.height - 3))
+      use transformed <- do_until(shapes)
+      let txed_shape = tx_shape(transformed, #(x, y))
+      case will_fit(m, txed_shape) {
+        True -> {
+          let m1 = add_shape_at(m, txed_shape)
+          loop1(m1, transforms, new_quantities)
         }
+        False -> Error(Nil)
       }
     }
   }
 }
 
-fn can_fit(idx: Int, region: Region, shapes: Dict(Int, Shape)) -> Bool {
+fn can_fit(idx: Int, region: Region, transforms: Dict(Int, List(Shape))) -> Bool {
   let m0 = matrix.with_size(matrix.AsDict, region.size.0, region.size.1, ".")
-
   let quantities = region.quantities
-  case loop1(m0, shapes, quantities) {
+
+  case loop1(m0, transforms, quantities) {
     Ok(final_m) -> {
       printf("~p: Fit found\n", [idx])
-      // printf("Final:\n~s\n", [matrix.pp(final_m, function.identity)])
+      printf("Final:\n~s\n", [matrix.pp(final_m, function.identity)])
       True
     }
     Error(_) -> {
@@ -250,9 +268,13 @@ fn can_fit(idx: Int, region: Region, shapes: Dict(Int, Shape)) -> Bool {
 pub fn p1(content) -> Int {
   let model = parse(content)
   let shapes = model.shapes
-  let assert [r0, r1, _] = model.regions
-  // can_fit(0, r0, shapes)
-  can_fit(1, r1, shapes)
+  let transforms: Dict(Int, List(Shape)) =
+    shapes |> dict.map_values(fn(_, shape) { all_transforms(shape) })
+
+  let assert [r0, r1, r2] = model.regions
+  can_fit(0, r0, transforms)
+  can_fit(1, r1, transforms)
+  // can_fit(2, r2, transforms)
   // model.regions
   // |> list.index_map(pair.new)
   // |> list.count(fn(el) { can_fit(el.1, el.0, shapes) })
