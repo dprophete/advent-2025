@@ -222,7 +222,7 @@ fn can_fit(
   )
 
   case loop1(m0, transforms, shape_ids) {
-    Ok(final_m) -> {
+    Ok(_final_m) -> {
       printf("~p: Fit found\n", [idx])
       True
     }
@@ -236,9 +236,12 @@ fn can_fit(
 pub fn p1(content) -> Int {
   let model = parse(content)
   let shapes = model.shapes
+
   // dict: shape_id -> list of all transforms for this shape
   let transforms: Dict(Int, List(Shape)) =
     shapes |> dict.map_values(fn(_, shape) { all_transforms(shape) })
+
+  // dict: shape_id -> size of shape (number of points)
   let shape_sizes: Dict(Int, Int) =
     shapes |> dict.map_values(fn(_, shape) { set.size(shape) })
 
@@ -253,7 +256,7 @@ pub fn p1(content) -> Int {
 
 pub fn main() {
   pp_day("Day 12: Christmas Tree Farm")
-  // oh great, it takes forever with the sample data but completes in no time with the input data...
+  // oh great, it takes forever (260s) with the sample data but completes in no time with the input data...
   // assert time_it(p1, "p1", "data/12_sample.txt") == 2
   assert time_it(p1, "p1", "data/12_input.txt") == 448
 }
