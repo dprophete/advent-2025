@@ -24,9 +24,7 @@ pub fn p1(content: String) -> Int {
     })
   let ids: List(Int) = string.split(ids, "\n") |> list.filter_map(int.parse)
 
-  let is_fresh = fn(id) {
-    ranges |> list.any(fn(range) { is_fresh(range, id) })
-  }
+  let is_fresh = fn(id) { ranges |> list.any(is_fresh(_, id)) }
   ids |> list.filter(is_fresh) |> list.length()
 }
 
